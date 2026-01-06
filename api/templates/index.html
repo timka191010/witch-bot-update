@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Клуб «Ведьмы не стареют»</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at top, #2b2f5c 0%, #0b1023 40%, #050712 100%);
+            min-height: 100vh;
+            padding: 12px;
+            color: #f5f5ff;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(90deg, #14172b, #181b34);
+            border-radius: 16px;
+            padding: 8px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+        }
+
+        .nav-btn {
+            padding: 9px 18px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.18);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            background: rgba(17, 22, 45, 0.9);
+            color: #d9dcff;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-btn:hover {
+            background: rgba(32, 39, 82, 0.98);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #b832ff, #ff3fb3);
+            color: #ffffff;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 6px 20px rgba(255,63,179,0.7);
+            border-color: transparent;
+        }
+
+        .admin-btn {
+            margin-left: auto;
+            font-size: 12px;
+            padding-inline: 14px;
+            color: #a6b0ff;
+        }
+
+        @media (max-width: 700px) {
+            .navbar { justify-content: center; }
+            .admin-btn { margin-left: 0; }
+        }
+
+        .page-section {
+            display: none;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .page-section.active {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .shell {
+            background: radial-gradient(circle at top, rgba(255,255,255,0.04), rgba(0,0,0,0.7));
+            border-radius: 24px;
+            padding: 18px;
+            box-shadow: 0 18px 60px rgba(0,0,0,0.8);
+        }
+
+        .inner {
+            background: linear-gradient(145deg, #191c33, #14172b);
+            border-radius: 18px;
+            padding: 26px 22px 22px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #ffffff;
+            text-align: center;
+            text-shadow: 0 0 14px rgba(255,255,255,0.25);
+        }
+
+        .tagline {
+            font-size: 14px;
+            color: #a7b0ff;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .form-group { margin-bottom: 18px; }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #c7ccff;
+            letter-spacing: 0.02em;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 11px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(9, 12, 28, 0.95);
+            color: #f5f5ff;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.15s ease;
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: #8087b5;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #7c8cff;
+            box-shadow: 0 0 0 1px rgba(124,140,255,0.7), 0 0 12px rgba(124,140,255,0.4);
+            background: rgba(12,16,40,0.98);
+        }
+
+        textarea { resize: vertical; min-height: 80px; }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            border-radius: 999px;
+            border: none;
+            background: linear-gradient(135deg, #b832ff, #ff3fb3);
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.02em;
+            box-shadow: 0 10px 30px rgba(184,50,255,0.7);
+            transition: all 0.15s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 40px rgba(184,50,255,0.85);
+        }
+
+        .success-message,
+        .error-message {
+            display: none;
+            text-align: center;
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .success-message {
+            color: #bbf7d0;
+            background: rgba(22, 101, 52, 0.2);
+            border: 1px solid rgba(74, 222, 128, 0.6);
+        }
+
+        .error-message {
+            color: #fecaca;
+            background: rgba(127, 29, 29, 0.35);
+            border: 1px solid rgba(248, 113, 113, 0.7);
+        }
+
+        .members-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .member-card {
+            background: linear-gradient(135deg, #181b34, #15182f);
+            border-radius: 18px;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 10px 26px rgba(0,0,0,0.6);
+            transition: all 0.15s ease;
+        }
+
+        .member-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 32px rgba(0,0,0,0.8);
+            border-color: rgba(255,255,255,0.12);
+        }
+
+        .member-emoji { font-size: 40px; flex-shrink: 0; }
+
+        .member-name {
+            font-size: 18px;
+            color: #ffffff;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .member-role {
+            font-size: 14px;
+            color: #ffd84b;
+            font-weight: 500;
+        }
+
+        .profile-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #d0d3ff;
+            text-align: center;
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3ff;
+        }
+
+        @media (max-width: 700px) {
+            .shell { padding: 14px; }
+            .inner { padding: 20px 16px 18px; }
+        }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <button class="nav-btn active" onclick="showSection('anketa', this)">Анкета</button>
+    <button class="nav-btn" onclick="showSection('members', this)">Участницы</button>
+    <button class="nav-btn" onclick="showSection('profile', this)">Профиль</button>
+    <a href="{{ url_for('admin_login') }}" class="nav-btn admin-btn">Админка</a>
+</div>
+
+<!-- АНКЕТА -->
+<div id="anketa" class="page-section active">
+    <div class="shell">
+        <div class="inner">
+            <h1>Вступление в клуб</h1>
+            <p class="tagline">Закрытое пространство общения, поддержки и совместных проектов</p>
+
+            <div class="success-message" id="successMsg">
+                Ваша анкета отправлена. Администратор свяжется с вами после рассмотрения заявки.
+            </div>
+
+            <div class="error-message" id="errorMsg"></div>
+
+            <form id="surveyForm">
+                <div class="form-group">
+                    <label>Ваше имя *</label>
+                    <input type="text" name="name" placeholder="Ваше имя" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Дата рождения (ДД.ММ.ГГГГ)</label>
+                    <input id="birthDate" type="text" name="birthDate" placeholder="ДД.ММ.ГГГГ" maxlength="10">
+                </div>
+
+                <div class="form-group">
+                    <label>Telegram @</label>
+                    <input type="text" name="telegramUsername" placeholder="username (без @)">
+                </div>
+
+                <div class="form-group">
+                    <label>Семейное положение</label>
+                    <select name="familyStatus">
+                        <option value="">Выбрать...</option>
+                        <option value="single">Не замужем</option>
+                        <option value="married">Замужем</option>
+                        <option value="divorced">Разведена</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Дети (возраст, пол)</label>
+                    <input type="text" name="children" placeholder="Например: дочь, 7 лет; сын, 3 года">
+                </div>
+
+                <div class="form-group">
+                    <label>Увлечения и хобби</label>
+                    <textarea name="interests" placeholder="Расскажите о ваших интересах..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Интересные темы (форматы, выезды, встречи)</label>
+                    <textarea name="topics" placeholder="Какие встречи и темы вам интересны?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Цель вступления в клуб</label>
+                    <textarea name="goals" placeholder="Почему вы хотите присоединиться?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Откуда узнали о клубе?</label>
+                    <input type="text" name="source" placeholder="Например: подкаст, подруга, соцсети">
+                </div>
+
+                <div class="form-group">
+                    <label style="font-weight:400;">
+                        <input type="checkbox" name="useTelegram" value="yes" style="width:auto; margin-right:6px;">
+                        Хочу получить ссылку на Telegram‑чат и согласна на связь через Telegram
+                    </label>
+                </div>
+
+                <button type="submit">Отправить анкету</button>
+            </form>
+
+            <div class="footer">
+                <p>Клуб «Ведьмы не стареют» — сообщество женщин, которые выбирают рост и поддержку.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- УЧАСТНИЦЫ -->
+<div id="members" class="page-section">
+    <div class="shell">
+        <div class="inner">
+            <h1>Участницы клуба</h1>
+            <div class="members-list" id="membersList">
+                <p style="text-align:center; color:#9ca3ff;">Загружаем список участниц...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ПРОФИЛЬ -->
+<div id="profile" class="page-section">
+    <div class="shell">
+        <div class="inner">
+            <h1>Профиль</h1>
+
+            {% if profile_survey %}
+                <p class="profile-text">
+                    Имя: <strong>{{ profile_survey.name }}</strong>
+                </p>
+                <p class="profile-text">
+                    Статус анкеты:
+                    {% if profile_status == 'approved' %}
+                        одобрена
+                    {% elif profile_status == 'pending' %}
+                        на рассмотрении
+                    {% elif profile_status == 'rejected' %}
+                        отклонена
+                    {% else %}
+                        неизвестен
+                    {% endif %}
+                </p>
+            {% else %}
+                <p class="profile-text">
+                    Анкета ещё не отправлена или сессия была очищена.
+                </p>
+                <p class="profile-text">
+                    Заполните анкету во вкладке «Анкета», чтобы увидеть здесь свой статус.
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function showSection(sectionId, btn) {
+        document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-btn:not(.admin-btn)').forEach(el => el.classList.remove('active'));
+        document.getElementById(sectionId).classList.add('active');
+        btn.classList.add('active');
+        if (sectionId === 'members') loadMembers();
+    }
+
+    async function loadMembers() {
+        try {
+            const res = await fetch('/api/members');
+            const members = await res.json();
+            const container = document.getElementById('membersList');
+
+            if (!members.length) {
+                container.innerHTML =
+                    '<p style="text-align:center; color:#9ca3ff;">Участниц пока нет.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            members.forEach(member => {
+                const card = document.createElement('div');
+                card.className = 'member-card';
+                card.innerHTML = `
+                    <div class="member-emoji">${member.emoji}</div>
+                    <div>
+                        <div class="member-name">${member.name}</div>
+                        <div class="member-role">${member.title}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        } catch (e) {
+            document.getElementById('membersList').innerHTML =
+                '<p style="color:#fecaca;">Ошибка загрузки</p>';
+        }
+    }
+
+    // авто-точки в дате рождения
+    const birthInput = document.getElementById('birthDate');
+    birthInput.addEventListener('input', (e) => {
+        let v = e.target.value.replace(/\D/g, '');
+        if (v.length > 8) v = v.slice(0, 8);
+
+        if (v.length >= 5) {
+            e.target.value = v.slice(0,2) + '.' + v.slice(2,4) + '.' + v.slice(4);
+        } else if (v.length >= 3) {
+            e.target.value = v.slice(0,2) + '.' + v.slice(2);
+        } else {
+            e.target.value = v;
+        }
+    });
+
+    document.getElementById('surveyForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = {
+            name: document.querySelector('input[name="name"]').value,
+            birthDate: document.querySelector('input[name="birthDate"]').value,
+            telegramUsername: document.querySelector('input[name="telegramUsername"]').value,
+            familyStatus: document.querySelector('select[name="familyStatus"]').value,
+            children: document.querySelector('input[name="children"]').value,
+            interests: document.querySelector('textarea[name="interests"]').value,
+            topics: document.querySelector('textarea[name="topics"]').value,
+            goals: document.querySelector('textarea[name="goals"]').value,
+            source: document.querySelector('input[name="source"]').value,
+            useTelegram: document.querySelector('input[name="useTelegram"]').checked ? 'yes' : 'no'
+        };
+
+        try {
+            const response = await fetch('/api/survey', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                document.getElementById('surveyForm').reset();
+                document.getElementById('successMsg').style.display = 'block';
+                document.getElementById('errorMsg').style.display = 'none';
+                setTimeout(() => {
+                    document.getElementById('successMsg').style.display = 'none';
+                }, 5000);
+            } else {
+                const error = await response.json();
+                document.getElementById('errorMsg').textContent =
+                    'Ошибка: ' + (error.error || 'Попробуйте позже');
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        } catch (error) {
+            document.getElementById('errorMsg').textContent = 'Ошибка подключения';
+            document.getElementById('errorMsg').style.display = 'block';
+        }
+    });
+
+    loadMembers();
+</script>
+</body>
+</html>

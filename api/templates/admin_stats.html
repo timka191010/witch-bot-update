@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статистика клуба</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at top, #2b2f5c 0%, #0b1023 40%, #050712 100%);
+            min-height: 100vh;
+            padding: 12px;
+            color: #f5f5ff;
+        }
+
+        .topbar {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(90deg, #14172b, #181b34);
+            border-radius: 16px;
+            padding: 10px 14px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+        }
+
+        .topbar-title { font-size: 16px; font-weight: 600; }
+
+        .topbar-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(17, 22, 45, 0.9);
+            color: #d9dcff;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: rgba(32, 39, 82, 0.98);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+        }
+
+        .btn-danger {
+            border-color: rgba(248,113,113,0.6);
+            color: #fecaca;
+        }
+
+        .layout {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .layout { grid-template-columns: minmax(0, 1fr); }
+        }
+
+        .shell {
+            background: radial-gradient(circle at top, rgba(255,255,255,0.04), rgba(0,0,0,0.7));
+            border-radius: 24px;
+            padding: 16px;
+            box-shadow: 0 18px 60px rgba(0,0,0,0.8);
+        }
+
+        .inner {
+            background: linear-gradient(145deg, #191c33, #14172b);
+            border-radius: 18px;
+            padding: 20px 18px 18px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        h2 { font-size: 18px; margin-bottom: 12px; }
+
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            font-size: 14px;
+        }
+
+        .stat-line:last-child { border-bottom: none; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(9,12,28,0.9);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 12px;
+        }
+
+        .sources-list {
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        .sources-list div {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <div class="topbar-title">Статистика клуба</div>
+    <div class="topbar-actions">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn">К заявкам</a>
+        <a href="{{ url_for('index_page') }}" class="btn">На сайт</a>
+        <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">Выйти</a>
+    </div>
+</div>
+
+<div class="layout">
+    <div class="shell">
+        <div class="inner">
+            <h2>Анкеты</h2>
+            <div class="stat-line">
+                <span>Всего анкет</span>
+                <span class="badge">{{ stats.total }}</span>
+            </div>
+            <div class="stat-line">
+                <span>Одобрено</span>
+                <span class="badge">{{ stats.approved }}</span>
+            </div>
+            <div class="stat-line">
+                <span>В ожидании</span>
+                <span class="badge">{{ stats.pending }}</span>
+            </div>
+            <div class="stat-line">
+                <span>Отклонено</span>
+                <span class="badge">{{ stats.rejected }}</span>
+            </div>
+            <div class="stat-line">
+                <span>Участниц в клубе</span>
+                <span class="badge">{{ stats.members_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="shell">
+        <div class="inner">
+            <h2>Состав</h2>
+            <div class="stat-line">
+                <span>Замужем</span>
+                <span class="badge">{{ stats.married }}</span>
+            </div>
+            <div class="stat-line">
+                <span>Не замужем</span>
+                <span class="badge">{{ stats.single }}</span>
+            </div>
+            <div class="stat-line">
+                <span>С детьми</span>
+                <span class="badge">{{ stats.with_kids }}</span>
+            </div>
+            <div class="stat-line">
+                <span>Без детей</span>
+                <span class="badge">{{ stats.no_kids }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="shell" style="grid-column: 1 / -1;">
+        <div class="inner">
+            <h2>Откуда узнают о клубе</h2>
+            <div class="sources-list">
+                {% for source, count in stats.sources.items() %}
+                <div>
+                    <span>{{ source }}</span>
+                    <span class="badge">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,47 @@
+{
+  "1": {
+    "id": "1",
+    "name": "тим",
+    "birthDate": "10.10.2000",
+    "telegramUsername": "timka1910101",
+    "familyStatus": "married",
+    "children": "нету",
+    "interests": "yo",
+    "topics": "yo",
+    "goals": "yo",
+    "source": "no",
+    "useTelegram": true,
+    "status": "approved",
+    "createdAt": "2026-01-06 22:52:05"
+  },
+  "2": {
+    "id": "2",
+    "name": "тим",
+    "birthDate": "10.10.2000",
+    "telegramUsername": "timka1910101",
+    "familyStatus": "married",
+    "children": "нету",
+    "interests": "no",
+    "topics": "no",
+    "goals": "np",
+    "source": "Мария Зуева",
+    "useTelegram": true,
+    "status": "rejected",
+    "createdAt": "2026-01-06 22:54:51"
+  },
+  "3": {
+    "id": "3",
+    "name": "тим",
+    "birthDate": "10.10.2000",
+    "telegramUsername": "timka1910101",
+    "familyStatus": "married",
+    "children": "нету",
+    "interests": "no",
+    "topics": "no",
+    "goals": "np",
+    "source": "Мария Зуева",
+    "useTelegram": true,
+    "status": "rejected",
+    "createdAt": "2026-01-06 22:55:00"
+  }
+}
