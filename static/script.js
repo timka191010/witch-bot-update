@@ -4,7 +4,7 @@ tg.expand();
 tg.ready();
 
 // Получаем данные пользователя из Telegram
-let userId = tg.initDataUnsafe?.user?.id || 12345; // Fallback для тестирования
+let userId = tg.initDataUnsafe?.user?.id || 12345;
 let userName = tg.initDataUnsafe?.user?.first_name || 'Тестовый пользователь';
 let userFullName = `${tg.initDataUnsafe?.user?.first_name || ''} ${tg.initDataUnsafe?.user?.last_name || ''}`.trim();
 
@@ -22,155 +22,131 @@ if (tg.themeParams) {
 }
 
 // Переключение вкладок
-document.querySelectorAll('.tab').forEach(tab => {
+document.querySelectorAll('.nav-btn:not(.admin-btn)').forEach(tab => {
     tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.page-section').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.nav-btn:not(.admin-btn)').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
-        const tabName = tab.dataset.tab;
+        const tabName = tab.dataset.tab || tab.getAttribute('onclick').match(/'([^']+)'/)[1];
         document.getElementById(tabName).classList.add('active');
         
-        // Вибрация при переключении вкладок
+        // Загрузка участников для вкладки members
+        if (tabName === 'members') {
+            loadMembers();
+        }
+        
         tg.HapticFeedback.impactOccurred('light');
     });
 });
 
-// Отправка формы
-const form = document.getElementById('applicationForm');
+// === УЧАСТНИКИ (ИСПРАВЛЕННАЯ ФУНКЦИЯ) ===
+async function loadMembers() {
+  try {
+    console.log('🔄 Загрузка участниц...');
+    const response = await fetch('/api/members.json');  // ← .json!
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    const members = Object.values(data);  // объект → массив
+    
+    console.log('✅ Получено:', members.length, 'ведьм');
+    
+    const container = document.getElementById('membersList');  // ← ТВОЙ ID!
+    
+    if (!container) {
+      console.error('❌ #membersList не найден');
+      return;
+    }
+    
+    // Красивый список по твоему CSS
+    container.innerHTML = members.map(m => `
+      <div class="member-card">
+        <div class="member-emoji">${m.emoji || '👤'}</div>
+        <div>
+          <div class="member-name">${m.name}</div>
+          <div class="member-role">${m.title}</div>
+          <small style="color:#9ca3ff;">${m.joinedAt || 'Не указано'}</small>
+        </div>
+      </div>
+    `).join('');
+    
+    console.log('🎉 Участницы отрисованы!');
+  } catch (error) {
+    console.error('❌ Ошибка участников:', error);
+    document.getElementById('membersList').innerHTML = 
+      '<p style="text-align:center; color:#fecaca;">Ошибка загрузки списка 😿</p>';
+  }
+}
+
+// Отправка формы (твой старый код)
+const form = document.getElementById('surveyForm');
 if (form) {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        console.log('🔥 Форма отправляется!');
-        
-        // Вибрация при отправке
         tg.HapticFeedback.impactOccurred('medium');
         
-        const formData = new FormData(e.target);
-        const data = {
-            user_id: userId,
-            name: formData.get('name'),
-            age: formData.get('age'),
-            family_status: formData.get('family_status'),
-            children: formData.get('children'),
-            hobbies: formData.get('hobbies'),
-            themes: formData.get('themes'),
-            goal: formData.get('goal'),
-            source: formData.get('source')
+        const formData = {
+            name: document.querySelector('input[name="name"]').value,
+            birthDate: document.querySelector('input[name="birthDate"]').value,
+            telegramUsername: document.querySelector('input[name="telegramUsername"]').value,
+            familyStatus: document.querySelector('select[name="familyStatus"]').value,
+            children: document.querySelector('input[name="children"]').value,
+            interests: document.querySelector('textarea[name="interests"]').value,
+            topics: document.querySelector('textarea[name="topics"]').value,
+            goals: document.querySelector('textarea[name="goals"]').value,
+            source: document.querySelector('input[name="source"]').value,
+            useTelegram: document.querySelector('input[name="useTelegram"]').checked
         };
         
-        console.log('📤 Отправляем данные:', data);
-        
         try {
-            const response = await fetch('/api/submit_application', {
+            const response = await fetch('/api/survey', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(formData)
             });
             
-            const result = await response.json();
-            console.log('📥 Получен ответ:', result);
-            
-            if (result.success) {
-                // Успешная вибрация
-                tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert('✅ Анкета отправлена! Ожидайте одобрения.');
-                e.target.reset();
-                // Обновляем статус после отправки
-                loadUserStatus();
+            if (response.ok) {
+                tg.showAlert('✅ Анкета отправлена!');
+                form.reset();
             } else {
-                tg.HapticFeedback.notificationOccurred('error');
-                tg.showAlert('❌ Ошибка: ' + result.message);
+                tg.showAlert('❌ Ошибка отправки');
             }
         } catch (error) {
-            tg.HapticFeedback.notificationOccurred('error');
-            tg.showAlert('❌ Ошибка отправки: ' + error.message);
-            console.error('❌ Ошибка:', error);
+            tg.showAlert('❌ Ошибка сети');
         }
     });
 }
 
-// Загрузка статуса пользователя
+// Загрузка статуса пользователя (твой старый код)
 async function loadUserStatus() {
     try {
         const response = await fetch(`/api/user_status/${userId}`);
         const data = await response.json();
         
-        console.log('📊 Статус пользователя:', data);
-        
         const statusElement = document.querySelector('.status-pending');
         const userNameElement = document.getElementById('userName');
-        const userIdElement = document.getElementById('userId');
-        
-        // Обновляем ID пользователя
-        if (userIdElement) {
-            userIdElement.textContent = userId;
-        }
         
         if (data.exists) {
-            // Обновляем имя
             userNameElement.textContent = data.name;
-            
-            // Обновляем статус
             if (data.status === 'approved') {
                 statusElement.textContent = '✅ Одобрена';
-                statusElement.className = 'status-approved';
                 statusElement.style.color = '#00FF00';
-                statusElement.style.background = 'rgba(0, 255, 0, 0.2)';
-                statusElement.style.border = '1px solid #00FF00';
-                statusElement.style.padding = '5px 10px';
-                statusElement.style.borderRadius = '15px';
-                statusElement.style.display = 'inline-block';
             } else if (data.status === 'rejected') {
                 statusElement.textContent = '❌ Отклонена';
-                statusElement.className = 'status-rejected';
                 statusElement.style.color = '#FF4444';
-                statusElement.style.background = 'rgba(255, 68, 68, 0.2)';
-                statusElement.style.border = '1px solid #FF4444';
-                statusElement.style.padding = '5px 10px';
-                statusElement.style.borderRadius = '15px';
-                statusElement.style.display = 'inline-block';
             } else {
-                statusElement.textContent = '⏳ Ожидает проверки';
-                statusElement.className = 'status-pending';
+                statusElement.textContent = '⏳ Ожидает';
                 statusElement.style.color = '#FFA500';
-                statusElement.style.background = 'rgba(255, 165, 0, 0.2)';
-                statusElement.style.border = '1px solid #FFA500';
-                statusElement.style.padding = '5px 10px';
-                statusElement.style.borderRadius = '15px';
-                statusElement.style.display = 'inline-block';
             }
-        } else {
-            userNameElement.textContent = userFullName || 'Не заполнено';
-            statusElement.textContent = '📝 Анкета не заполнена';
-            statusElement.style.color = 'rgba(255, 255, 255, 0.6)';
         }
     } catch (error) {
-        console.error('❌ Ошибка загрузки статуса:', error);
-        document.getElementById('userName').textContent = userFullName || 'Ошибка загрузки';
-        document.querySelector('.status-pending').textContent = 'Ошибка загрузки';
+        console.error('Статус:', error);
     }
 }
 
-// Загружаем статус при загрузке страницы
-window.addEventListener('DOMContentLoaded', () => {
-    console.log('✅ Script.js загружен успешно!');
-    loadUserStatus();
+// Инициализация
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Witch Club готов!');
+  loadUserStatus();
 });
-// === УЧАСТНИКИ ===
-async function loadMembers() {
-  const response = await fetch('/api/members.json');
-  const data = await response.json();
-  const members = Object.values(data);
-  
-  const container = document.getElementById('members-list');
-  if (container) {
-    container.innerHTML = members.map(m => 
-      `<div>${m.emoji} ${m.name}<br><small>${m.title}</small></div>`
-    ).join('');
-  }
-}
-
-// ЗАГРУЗИТЬ ПРИ СТАРТЕ
-loadMembers();
