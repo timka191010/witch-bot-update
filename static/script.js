@@ -158,3 +158,19 @@ window.addEventListener('DOMContentLoaded', () => {
     console.log('✅ Script.js загружен успешно!');
     loadUserStatus();
 });
+// === УЧАСТНИКИ ===
+async function loadMembers() {
+  const response = await fetch('/api/members.json');
+  const data = await response.json();
+  const members = Object.values(data);
+  
+  const container = document.getElementById('members-list');
+  if (container) {
+    container.innerHTML = members.map(m => 
+      `<div>${m.emoji} ${m.name}<br><small>${m.title}</small></div>`
+    ).join('');
+  }
+}
+
+// ЗАГРУЗИТЬ ПРИ СТАРТЕ
+loadMembers();
