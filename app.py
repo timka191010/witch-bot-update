@@ -17,26 +17,32 @@ SURVEYS_FILE = DATA_DIR / 'surveys.json'
 
 def load_surveys():
     if SURVEYS_FILE.exists():
-        with open(SURVEYS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        try:
+            with open(SURVEYS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return []
     return []
 
 def save_surveys(surveys):
     with open(SURVEYS_FILE, 'w', encoding='utf-8') as f:
         json.dump(surveys, f, ensure_ascii=False, indent=2)
 
-# Главная
+# === ГЛАВНАЯ ===
 @app.route('/')
 def index():
     return send_from_directory('public', 'index.html')
 
-# Статика
+# === СТАТИКА ===
 @app.route('/<path:path>')
 def serve_static(path):
-    return send_from_directory('public', path)
+    try:
+        return send_from_directory('public', path)
+    except:
+        return send_from_directory('public', 'index.html')
 
-# API
-@app.route('/api/members')
+# === API ===
+@app.route('/api/members', methods=['GET'])
 def api_members():
     try:
         with open('public/members.json', 'r', encoding='utf-8') as f:
@@ -49,21 +55,22 @@ def api_members():
 def save_survey():
     try:
         data = request.get_json()
+        
         if not data or not data.get('name'):
-            return jsonify({'error': 'Имя обязательно'}), 400
+            return jsonify({'error': 'Name required'}), 400
 
         survey = {
             'id': datetime.now().isoformat(),
-            'name': data.get('name'),
-            'birthDate': data.get('birthDate'),
-            'telegramUsername': data.get('telegramUsername'),
-            'familyStatus': data.get('familyStatus'),
-            'children': data.get('children'),
-            'interests': data.get('interests'),
-            'topics': data.get('topics'),
-            'goals': data.get('goals'),
-            'source': data.get('source'),
-            'useTelegram': data.get('useTelegram'),
+            'name': data.get('name', ''),
+            'birthDate': data.get('birthDate', ''),
+            'telegramUsername': data.get('telegramUsername', ''),
+            'familyStatus': data.get('familyStatus', ''),
+            'children': data.get('children', ''),
+            'interests': data.get('interests', ''),
+            'topics': data.get('topics', ''),
+            'goals': data.get('goals', ''),
+            'source': data.get('source', ''),
+            'useTelegram': data.get('useTelegram', 'no'),
             'createdAt': datetime.now().isoformat(),
             'status': 'pending'
         }
@@ -72,13 +79,20 @@ def save_survey():
         surveys.append(survey)
         save_surveys(surveys)
 
+        print(f'✅ Survey saved: {survey["name"]}')
         return jsonify({'success': True}), 200
+
     except Exception as e:
+        print(f'❌ Error: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(404)
 def not_found(e):
     return send_from_directory('public', 'index.html')
+
+@app.errorhandler(500)
+def server_error(e):
+    return jsonify({'error': 'Server error'}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
