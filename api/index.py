@@ -11,11 +11,11 @@ import requests
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 app.secret_key = 'witch_club_secret_2025'
 
-SURVEYS_FILE = 'surveys.json'
-MEMBERS_FILE = 'members.json'
+SURVEYS_FILE = '/tmp/surveys.json'
+MEMBERS_FILE = '/tmp/members.json'
 ADMIN_PASSWORD = 'witch2026'
 
 TELEGRAM_BOT_TOKEN = '8500508012:AAEMuWXEsZsUfiDiOV50xFw928Tn7VUJRH8'
@@ -38,7 +38,6 @@ TITLES = [
     "Ведьма Превращений",
 ]
 
-
 def load_json(filepath):
     try:
         if os.path.exists(filepath):
@@ -47,7 +46,6 @@ def load_json(filepath):
     except Exception as e:
         logger.error(f"Error loading {filepath}: {e}")
     return {}
-
 
 def save_json(filepath, data):
     try:
@@ -58,7 +56,6 @@ def save_json(filepath, data):
         logger.error(f"Error saving {filepath}: {e}")
         return False
 
-
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -66,7 +63,6 @@ def login_required(f):
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return decorated
-
 
 def send_telegram_message(text: str) -> bool:
     try:
@@ -78,7 +74,6 @@ def send_telegram_message(text: str) -> bool:
     except Exception as e:
         logger.error(f"Telegram send error: {e}")
         return False
-
 
 def send_welcome_message(name: str, telegram_username: Optional[str]):
     if telegram_username:
@@ -94,7 +89,6 @@ def send_welcome_message(name: str, telegram_username: Optional[str]):
             "Администратор свяжется с тобой и отправит ссылку на чат."
         )
     send_telegram_message(text)
-
 
 def format_survey_for_admin(survey: dict, use_telegram: bool) -> str:
     lines = [
@@ -121,7 +115,6 @@ def format_survey_for_admin(survey: dict, use_telegram: bool) -> str:
         ]
     return "\n".join(lines)
 
-
 @app.route('/')
 def index_page():
     surveys = load_json(SURVEYS_FILE)
@@ -135,11 +128,9 @@ def index_page():
 
     return render_template('index.html', profile_survey=survey, profile_status=status)
 
-
 @app.route('/health')
 def health():
     return jsonify({'status': 'ok'})
-
 
 @app.route('/api/survey', methods=['POST'])
 def submit_survey():
@@ -183,14 +174,12 @@ def submit_survey():
         logger.error(f"Error submitting survey: {e}")
         return jsonify({'error': 'Server error'}), 500
 
-
 @app.route('/api/members', methods=['GET'])
 def api_members():
     members = load_json(MEMBERS_FILE)
     if isinstance(members, dict):
         return jsonify(list(members.values()))
     return jsonify(members or [])
-
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
@@ -203,12 +192,10 @@ def admin_login():
         error = 'Неверный пароль'
     return render_template('admin_login.html', error=error)
 
-
 @app.route('/admin/logout')
 def admin_logout():
     session.clear()
     return redirect(url_for('index_page'))
-
 
 @app.route('/admin')
 @login_required
@@ -231,7 +218,6 @@ def admin_dashboard():
         pending_list=pending,
         members_list=members_list
     )
-
 
 @app.route('/admin/stats')
 @login_required
@@ -266,7 +252,6 @@ def admin_stats():
     stats['sources'] = sources
 
     return render_template('admin_stats.html', stats=stats)
-
 
 @app.route('/api/approve/<survey_id>', methods=['POST'])
 @login_required
@@ -306,7 +291,6 @@ def approve_survey(survey_id):
         logger.error(f"Error approving survey: {e}")
         return jsonify({'error': 'Server error'}), 500
 
-
 @app.route('/api/reject/<survey_id>', methods=['POST'])
 @login_required
 def reject_survey(survey_id):
@@ -318,7 +302,6 @@ def reject_survey(survey_id):
     save_json(SURVEYS_FILE, surveys)
     return redirect(url_for('admin_dashboard'))
 
-
 @app.route('/api/remove_member/<member_id>', methods=['POST'])
 @login_required
 def remove_member(member_id):
@@ -329,7 +312,6 @@ def remove_member(member_id):
     members.pop(member_id)
     save_json(MEMBERS_FILE, members)
     return redirect(url_for('admin_dashboard'))
-
 
 @app.route('/api/update_title/<member_id>', methods=['POST'])
 @login_required
@@ -346,7 +328,6 @@ def update_title(member_id):
     save_json(MEMBERS_FILE, members)
     return redirect(url_for('admin_dashboard'))
 
-
 @app.route('/api/clear_surveys', methods=['POST'])
 @login_required
 def clear_surveys():
@@ -354,14 +335,12 @@ def clear_surveys():
     session.pop('last_survey_id', None)
     return redirect(url_for('admin_dashboard'))
 
-
 def parse_birth(birth_str: str):
     try:
         d, m, _y = birth_str.split('.')
         return int(d), int(m)
     except Exception:
         return None
-
 
 @app.route('/api/next_birthday')
 @login_required
@@ -371,7 +350,7 @@ def next_birthday():
         members = {}
 
     today = date.today()
-    best = None  # (days_diff, member)
+    best = None
 
     for m in members.values():
         bd_str = m.get('birthDate') or ''
@@ -395,6 +374,7 @@ def next_birthday():
     diff, member = best
     return jsonify({'hasBirthday': True, 'days': diff, 'member': member})
 
-
+# Для Vercel
+from werkzeug.serving import run_simple
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    app.run(debug=False)
