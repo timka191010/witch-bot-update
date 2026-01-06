@@ -7,6 +7,7 @@ import os
 import logging
 import random
 import requests
+import sqlite3
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,47 +15,46 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'witch_club_secret_2025'
 
-SURVEYS_FILE = '/tmp/surveys.json'
-MEMBERS_FILE = '/tmp/members.json'
-ADMIN_PASSWORD = 'witch2026'
+DB_FILE = '/tmp/witch_club.db'
 
 TELEGRAM_BOT_TOKEN = '8500508012:AAEMuWXEsZsUfiDiOV50xFw928Tn7VUJRH8'
 TELEGRAM_CHAT_ID = '-5015136189'
 TELEGRAM_CHAT_LINK = 'https://t.me/+S32BT0FT6w0xYTBi'
+ADMIN_PASSWORD = 'witch2026'
 
-EMOJIS = [
-    '🔮', '🌙', '🧿', '✨', '🕯️', '🌑', '🧙‍♀️', '🌸', '🕊️', '🌊',
-    '🍂', '❄️', '🌻', '🦉', '🪙', '💫', '⭐', '🔥', '🌿', '💎', '⚡', '🦋'
-]
+EMOJIS = ['🔮', '🌙', '🧿', '✨', '🕯️', '🌑', '🧙‍♀️', '🌸', '🕊️', '🌊', '🍂', '❄️', '🌻', '🦉', '🪙', '💫', '⭐', '🔥', '🌿', '💎', '⚡', '🦋']
+TITLES = ["Верховная Ведьма", "Ведьма Звёздного Пути", "Ведьма Трав и Эликсиров", "Ведьма Огненного Круга", "Ведьма Лунного Света", "Ведьма Кристаллов", "Ведьма Грозовых Ветров", "Ведьма Превращений"]
 
-TITLES = [
-    "Верховная Ведьма",
-    "Ведьма Звёздного Пути",
-    "Ведьма Трав и Эликсиров",
-    "Ведьма Огненного Круга",
-    "Ведьма Лунного Света",
-    "Ведьма Кристаллов",
-    "Ведьма Грозовых Ветров",
-    "Ведьма Превращений",
-]
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS surveys (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        birthDate TEXT,
+        telegramUsername TEXT,
+        familyStatus TEXT,
+        children TEXT,
+        interests TEXT,
+        topics TEXT,
+        goals TEXT,
+        source TEXT,
+        useTelegram INTEGER,
+        status TEXT DEFAULT 'pending',
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS members (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        emoji TEXT,
+        title TEXT,
+        joinedAt TEXT,
+        birthDate TEXT
+    )''')
+    conn.commit()
+    conn.close()
 
-def load_json(filepath):
-    try:
-        if os.path.exists(filepath):
-            with open(filepath, 'r', encoding='utf-8') as f:
-                return json.load(f)
-    except Exception as e:
-        logger.error(f"Error loading {filepath}: {e}")
-    return {}
-
-def save_json(filepath, data):
-    try:
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        return True
-    except Exception as e:
-        logger.error(f"Error saving {filepath}: {e}")
-        return False
+init_db()
 
 def login_required(f):
     @wraps(f)
@@ -69,63 +69,35 @@ def send_telegram_message(text: str) -> bool:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         data = {'chat_id': TELEGRAM_CHAT_ID, 'text': text, 'parse_mode': 'HTML'}
         resp = requests.post(url, json=data, timeout=10)
-        print(resp.status_code, resp.text)
+        print(f"📲 Telegram: {resp.status_code}")
         return resp.status_code == 200
     except Exception as e:
-        logger.error(f"Telegram send error: {e}")
+        print(f"❌ Telegram error: {e}")
         return False
 
 def send_welcome_message(name: str, telegram_username: Optional[str]):
     if telegram_username:
-        text = (
-            f"🎉 <b>Добро пожаловать, {name}!</b>\n\n"
-            f"Ты принята в клуб <b>«Ведьмы не стареют»</b>.\n\n"
-            f"📱 Присоединяйся к чату:\n{TELEGRAM_CHAT_LINK}"
-        )
+        text = f"🎉 <b>Добро пожаловать, {name}!</b>\n\n📱 Присоединяйся:\n{TELEGRAM_CHAT_LINK}"
     else:
-        text = (
-            f"🎉 <b>Добро пожаловать, {name}!</b>\n\n"
-            f"Ты принята в клуб <b>«Ведьмы не стареют»</b>.\n\n"
-            "Администратор свяжется с тобой и отправит ссылку на чат."
-        )
+        text = f"🎉 <b>Добро пожаловать, {name}!</b>\n\nАдминистратор отправит ссылку на чат."
     send_telegram_message(text)
-
-def format_survey_for_admin(survey: dict, use_telegram: bool) -> str:
-    lines = [
-        "<b>Новая анкета в клуб</b>",
-        "",
-        f"Имя: <b>{survey['name']}</b>",
-        f"Дата рождения: {survey.get('birthDate') or '—'}",
-        f"Telegram: @{survey.get('telegramUsername') or '—'}",
-        f"Семейное положение: {survey.get('familyStatus') or '—'}",
-        f"Дети: {survey.get('children') or '—'}",
-        "",
-        f"Увлечения: {survey.get('interests') or '—'}",
-        f"Темы: {survey.get('topics') or '—'}",
-        f"Цель: {survey.get('goals') or '—'}",
-        "",
-        f"Источник: {survey.get('source') or '—'}",
-        f"ID анкеты: {survey['id']}",
-    ]
-    if use_telegram:
-        lines += [
-            "",
-            "✅ Отметила, что готова общаться в Telegram.",
-            f"Ссылка на чат: {TELEGRAM_CHAT_LINK}",
-        ]
-    return "\n".join(lines)
 
 @app.route('/')
 def index_page():
-    surveys = load_json(SURVEYS_FILE)
     survey = None
     status = None
-
     survey_id = session.get('last_survey_id')
-    if isinstance(surveys, dict) and survey_id and survey_id in surveys:
-        survey = surveys[survey_id]
-        status = survey.get('status')
-
+    
+    if survey_id:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute('SELECT name, status FROM surveys WHERE id = ?', (survey_id,))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            survey = {'name': row[0]}
+            status = row[1]
+    
     return render_template('index.html', profile_survey=survey, profile_status=status)
 
 @app.route('/health')
@@ -140,46 +112,46 @@ def submit_survey():
         if not name:
             return jsonify({'error': 'Имя обязательно'}), 400
 
-        surveys = load_json(SURVEYS_FILE)
-        if not isinstance(surveys, dict):
-            surveys = {}
-
-        survey_id = str(len(surveys) + 1)
-        use_telegram = (data.get('useTelegram') == 'yes')
-
-        surveys[survey_id] = {
-            'id': survey_id,
-            'name': name,
-            'birthDate': data.get('birthDate', ''),
-            'telegramUsername': (data.get('telegramUsername') or '').strip(),
-            'familyStatus': data.get('familyStatus', ''),
-            'children': data.get('children', ''),
-            'interests': data.get('interests', ''),
-            'topics': data.get('topics', ''),
-            'goals': data.get('goals', ''),
-            'source': data.get('source', ''),
-            'useTelegram': use_telegram,
-            'status': 'pending',
-            'createdAt': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        }
-
-        if not save_json(SURVEYS_FILE, surveys):
-            return jsonify({'error': 'Save failed'}), 500
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        
+        c.execute('''INSERT INTO surveys 
+            (name, birthDate, telegramUsername, familyStatus, children, interests, topics, goals, source, useTelegram)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (name, data.get('birthDate', ''), data.get('telegramUsername', ''),
+             data.get('familyStatus', ''), data.get('children', ''),
+             data.get('interests', ''), data.get('topics', ''),
+             data.get('goals', ''), data.get('source', ''),
+             1 if data.get('useTelegram') == 'yes' else 0))
+        
+        conn.commit()
+        survey_id = c.lastrowid
+        conn.close()
 
         session['last_survey_id'] = survey_id
-
-        send_telegram_message(format_survey_for_admin(surveys[survey_id], use_telegram))
-        return jsonify({'success': True, 'survey': surveys[survey_id]}), 200
+        
+        print(f"✅ Анкета #{survey_id} сохранена: {name}")
+        
+        use_telegram = data.get('useTelegram') == 'yes'
+        survey_text = f"<b>Новая анкета!</b>\n\nИмя: <b>{name}</b>\nID: {survey_id}"
+        send_telegram_message(survey_text)
+        send_welcome_message(name, data.get('telegramUsername') if use_telegram else None)
+        
+        return jsonify({'success': True}), 200
     except Exception as e:
-        logger.error(f"Error submitting survey: {e}")
-        return jsonify({'error': 'Server error'}), 500
+        print(f"❌ Error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/members', methods=['GET'])
 def api_members():
-    members = load_json(MEMBERS_FILE)
-    if isinstance(members, dict):
-        return jsonify(list(members.values()))
-    return jsonify(members or [])
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('SELECT * FROM members')
+    rows = c.fetchall()
+    conn.close()
+    
+    members = [{'id': r[0], 'name': r[1], 'emoji': r[2], 'title': r[3], 'joinedAt': r[4], 'birthDate': r[5]} for r in rows]
+    return jsonify(members)
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
@@ -200,181 +172,90 @@ def admin_logout():
 @app.route('/admin')
 @login_required
 def admin_dashboard():
-    surveys = load_json(SURVEYS_FILE)
-    members = load_json(MEMBERS_FILE)
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    
+    c.execute('SELECT COUNT(*) FROM surveys')
+    total_surveys = c.fetchone()[0]
+    
+    c.execute('SELECT COUNT(*) FROM surveys WHERE status = ?', ('approved',))
+    approved = c.fetchone()[0]
+    
+    c.execute('SELECT COUNT(*) FROM surveys WHERE status = ?', ('pending',))
+    pending = c.fetchone()[0]
+    
+    c.execute('SELECT COUNT(*) FROM members')
+    total_members = c.fetchone()[0]
+    
+    c.execute('SELECT * FROM surveys WHERE status = ? ORDER BY createdAt DESC', ('pending',))
+    pending_list = [{'id': r[0], 'name': r[1]} for r in c.fetchall()]
+    
+    c.execute('SELECT * FROM members')
+    members_list = [{'id': r[0], 'name': r[1], 'emoji': r[2], 'title': r[3]} for r in c.fetchall()]
+    
+    conn.close()
+    
+    return render_template('admin_dashboard.html',
+        total_surveys=total_surveys,
+        approved_surveys=approved,
+        pending_surveys=pending,
+        total_members=total_members,
+        pending_list=pending_list,
+        members_list=members_list)
 
-    surveys_list = list(surveys.values()) if isinstance(surveys, dict) else (surveys or [])
-    members_list = list(members.values()) if isinstance(members, dict) else (members or [])
-
-    pending = [s for s in surveys_list if s.get('status') == 'pending']
-    approved = [s for s in surveys_list if s.get('status') == 'approved']
-
-    return render_template(
-        'admin_dashboard.html',
-        total_surveys=len(surveys_list),
-        approved_surveys=len(approved),
-        pending_surveys=len(pending),
-        total_members=len(members_list),
-        pending_list=pending,
-        members_list=members_list
-    )
-
-@app.route('/admin/stats')
-@login_required
-def admin_stats():
-    surveys = load_json(SURVEYS_FILE)
-    if not isinstance(surveys, dict):
-        surveys = {}
-    surveys_list = list(surveys.values())
-
-    stats = {
-        'total': len(surveys_list),
-        'approved': len([s for s in surveys_list if s.get('status') == 'approved']),
-        'pending': len([s for s in surveys_list if s.get('status') == 'pending']),
-        'rejected': len([s for s in surveys_list if s.get('status') == 'rejected']),
-    }
-
-    members = load_json(MEMBERS_FILE)
-    if not isinstance(members, dict):
-        members = {}
-    stats['members_count'] = len(members)
-
-    stats['married'] = len([s for s in surveys_list if s.get('familyStatus') == 'married'])
-    stats['single'] = len([s for s in surveys_list if s.get('familyStatus') == 'single'])
-
-    stats['with_kids'] = len([s for s in surveys_list if s.get('children')])
-    stats['no_kids'] = stats['total'] - stats['with_kids']
-
-    sources = {}
-    for s in surveys_list:
-        src = s.get('source') or 'Не указано'
-        sources[src] = sources.get(src, 0) + 1
-    stats['sources'] = sources
-
-    return render_template('admin_stats.html', stats=stats)
-
-@app.route('/api/approve/<survey_id>', methods=['POST'])
+@app.route('/api/approve/<int:survey_id>', methods=['POST'])
 @login_required
 def approve_survey(survey_id):
     try:
-        surveys = load_json(SURVEYS_FILE)
-        if not isinstance(surveys, dict):
-            return jsonify({'error': 'Invalid surveys data'}), 400
-
-        survey = surveys.get(survey_id)
-        if not survey:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        
+        c.execute('SELECT name, telegramUsername, useTelegram FROM surveys WHERE id = ?', (survey_id,))
+        row = c.fetchone()
+        if not row:
             return jsonify({'error': 'Not found'}), 404
-
-        members = load_json(MEMBERS_FILE)
-        if not isinstance(members, dict):
-            members = {}
-
-        member_id = str(len(members) + 1)
-        members[member_id] = {
-            'id': member_id,
-            'name': survey['name'],
-            'emoji': random.choice(EMOJIS),
-            'title': random.choice(TITLES),
-            'joinedAt': datetime.now().strftime('%Y-%m-%d'),
-            'birthDate': survey.get('birthDate', '')
-        }
-
-        survey['status'] = 'approved'
-
-        save_json(SURVEYS_FILE, surveys)
-        save_json(MEMBERS_FILE, members)
-
-        send_welcome_message(survey['name'], survey.get('telegramUsername'))
-
+        
+        name, tg_user, use_tg = row
+        
+        c.execute('''INSERT INTO members (name, emoji, title, joinedAt, birthDate)
+                    VALUES (?, ?, ?, ?, ?)''',
+                 (name, random.choice(EMOJIS), random.choice(TITLES), 
+                  datetime.now().strftime('%Y-%m-%d'), ''))
+        
+        c.execute('UPDATE surveys SET status = ? WHERE id = ?', ('approved', survey_id))
+        conn.commit()
+        conn.close()
+        
+        send_welcome_message(name, tg_user if use_tg else None)
+        
         return redirect(url_for('admin_dashboard'))
     except Exception as e:
-        logger.error(f"Error approving survey: {e}")
-        return jsonify({'error': 'Server error'}), 500
+        print(f"❌ Error: {e}")
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/reject/<survey_id>', methods=['POST'])
+@app.route('/api/reject/<int:survey_id>', methods=['POST'])
 @login_required
 def reject_survey(survey_id):
-    surveys = load_json(SURVEYS_FILE)
-    if not isinstance(surveys, dict) or survey_id not in surveys:
-        return jsonify({'error': 'Not found'}), 404
-
-    surveys[survey_id]['status'] = 'rejected'
-    save_json(SURVEYS_FILE, surveys)
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('UPDATE surveys SET status = ? WHERE id = ?', ('rejected', survey_id))
+    conn.commit()
+    conn.close()
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/api/remove_member/<member_id>', methods=['POST'])
+@app.route('/api/remove_member/<int:member_id>', methods=['POST'])
 @login_required
 def remove_member(member_id):
-    members = load_json(MEMBERS_FILE)
-    if not isinstance(members, dict) or member_id not in members:
-        return jsonify({'error': 'Not found'}), 404
-
-    members.pop(member_id)
-    save_json(MEMBERS_FILE, members)
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('DELETE FROM members WHERE id = ?', (member_id,))
+    conn.commit()
+    conn.close()
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/api/update_title/<member_id>', methods=['POST'])
-@login_required
-def update_title(member_id):
-    members = load_json(MEMBERS_FILE)
-    if not isinstance(members, dict) or member_id not in members:
-        return jsonify({'error': 'Not found'}), 404
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('index.html')
 
-    new_title = request.form.get('title', '').strip()
-    if not new_title:
-        return jsonify({'error': 'Empty title'}), 400
-
-    members[member_id]['title'] = new_title
-    save_json(MEMBERS_FILE, members)
-    return redirect(url_for('admin_dashboard'))
-
-@app.route('/api/clear_surveys', methods=['POST'])
-@login_required
-def clear_surveys():
-    save_json(SURVEYS_FILE, {})
-    session.pop('last_survey_id', None)
-    return redirect(url_for('admin_dashboard'))
-
-def parse_birth(birth_str: str):
-    try:
-        d, m, _y = birth_str.split('.')
-        return int(d), int(m)
-    except Exception:
-        return None
-
-@app.route('/api/next_birthday')
-@login_required
-def next_birthday():
-    members = load_json(MEMBERS_FILE)
-    if not isinstance(members, dict):
-        members = {}
-
-    today = date.today()
-    best = None
-
-    for m in members.values():
-        bd_str = m.get('birthDate') or ''
-        parsed = parse_birth(bd_str)
-        if not parsed:
-            continue
-        d, mth = parsed
-        try:
-            dt = date(today.year, mth, d)
-        except ValueError:
-            continue
-        if dt < today:
-            dt = date(today.year + 1, mth, d)
-        diff = (dt - today).days
-        if best is None or diff < best[0]:
-            best = (diff, m)
-
-    if not best:
-        return jsonify({'hasBirthday': False})
-
-    diff, member = best
-    return jsonify({'hasBirthday': True, 'days': diff, 'member': member})
-
-# Для Vercel
-from werkzeug.serving import run_simple
 if __name__ == '__main__':
     app.run(debug=False)
