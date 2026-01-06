@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import json
 import os
@@ -8,14 +8,13 @@ from pathlib import Path
 app = Flask(__name__, static_folder='public', static_url_path='')
 CORS(app)
 
-# Папка для данных
+app.config['JSON_AS_ASCII'] = False
+
+# Папки
 DATA_DIR = Path('data')
 DATA_DIR.mkdir(exist_ok=True)
-
 SURVEYS_FILE = DATA_DIR / 'surveys.json'
-MEMBERS_FILE = Path('public/members.json')
 
-# === ЗАГРУЗКА ДАННЫХ ===
 def load_surveys():
     if SURVEYS_FILE.exists():
         with open(SURVEYS_FILE, 'r', encoding='utf-8') as f:
@@ -26,42 +25,33 @@ def save_surveys(surveys):
     with open(SURVEYS_FILE, 'w', encoding='utf-8') as f:
         json.dump(surveys, f, ensure_ascii=False, indent=2)
 
-def load_members():
-    if MEMBERS_FILE.exists():
-        with open(MEMBERS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return {}
-
-# === МАРШРУТЫ ===
-
+# Главная
 @app.route('/')
 def index():
-    return app.send_static_file('index.html')
+    return send_from_directory('public', 'index.html')
 
-@app.route('/members.json')
-def get_members():
-    members = load_members()
-    return jsonify(members)
+# Статика
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('public', path)
 
-@app.route('/api/members', methods=['GET'])
+# API
+@app.route('/api/members')
 def api_members():
-    members = load_members()
-    members_list = list(members.values())
-    return jsonify(members_list)
+    try:
+        with open('public/members.json', 'r', encoding='utf-8') as f:
+            members = json.load(f)
+        return jsonify(list(members.values()))
+    except:
+        return jsonify([])
 
 @app.route('/api/survey', methods=['POST'])
 def save_survey():
     try:
         data = request.get_json()
-        
-        if not data.get('name'):
+        if not data or not data.get('name'):
             return jsonify({'error': 'Имя обязательно'}), 400
 
-        # Проверяем минимум данных
-        if not data.get('name'):
-            return jsonify({'error': 'Заполните имя'}), 400
-
-        # Создаём запись
         survey = {
             'id': datetime.now().isoformat(),
             'name': data.get('name'),
@@ -78,43 +68,18 @@ def save_survey():
             'status': 'pending'
         }
 
-        # Сохраняем
         surveys = load_surveys()
         surveys.append(survey)
         save_surveys(surveys)
 
-        print(f"✅ Анкета сохранена: {survey['name']}")
-        return jsonify({'success': True, 'message': 'Анкета отправлена'}), 200
-
-    except Exception as e:
-        print(f"❌ Ошибка: {str(e)}")
-        return jsonify({'error': f'Ошибка сервера: {str(e)}'}), 500
-
-@app.route('/admin')
-def admin():
-    return render_template('admin.html')
-
-@app.route('/api/surveys', methods=['GET'])
-def get_surveys():
-    surveys = load_surveys()
-    return jsonify(surveys)
-
-@app.route('/api/survey/<survey_id>', methods=['PUT'])
-def update_survey(survey_id):
-    try:
-        data = request.get_json()
-        surveys = load_surveys()
-        
-        for survey in surveys:
-            if survey['id'] == survey_id:
-                survey['status'] = data.get('status', 'pending')
-                save_surveys(surveys)
-                return jsonify({'success': True}), 200
-        
-        return jsonify({'error': 'Анкета не найдена'}), 404
-
+        return jsonify({'success': True}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.errorhandler(404)
+def not_found(e):
+    return send_from_directory('public', 'index.html')
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
