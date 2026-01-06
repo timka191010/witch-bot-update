@@ -35,9 +35,10 @@ document.querySelectorAll('.nav-btn:not(.admin-btn)').forEach(tab => {
 
 // === УЧАСТНИЦЫ (ФИНАЛЬНАЯ ВЕРСИЯ) ===
 async function loadMembers() {
-  try {
-    console.log('🔄 Загрузка...');
-    const response = await fetch('/api/members');  // ← API роут!
+  document.getElementById('membersList').innerHTML = '🔄 Загрузка...';
+  
+  fetch('/api/members
+
     
     if (!response.ok) throw new Error(response.status);
     
