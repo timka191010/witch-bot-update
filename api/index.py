@@ -75,8 +75,7 @@ def get_members():
         'name': m.name,
         'title': m.title,
         'emoji': m.emoji,
-        'bio': m.bio,
-        'birth_date': m.birth_date
+        'bio': m.bio
     } for m in members])
 
 @app.route('/api/upcoming-birthdays', methods=['GET'])
@@ -152,13 +151,45 @@ def admin_dashboard():
     pending_list = Survey.query.filter_by(approved=False).all()
     members_list = Member.query.all()
     
+    # Получить ближайшие дни рождения
+    from datetime import timedelta
+    today = datetime.now()
+    upcoming_bd = []
+    
+    for member in members_list:
+        if not member.birth_date:
+            continue
+        
+        try:
+            birth_parts = member.birth_date.split('.')
+            if len(birth_parts) == 3:
+                day, month, year = int(birth_parts[0]), int(birth_parts[1]), int(birth_parts[2])
+                next_birthday = datetime(today.year, month, day)
+                if next_birthday < today:
+                    next_birthday = datetime(today.year + 1, month, day)
+                
+                days_until = (next_birthday - today).days
+                
+                if 0 <= days_until <= 30:
+                    upcoming_bd.append({
+                        'name': member.name,
+                        'emoji': member.emoji,
+                        'birth_date': member.birth_date,
+                        'days_until': days_until
+                    })
+        except:
+            pass
+    
+    upcoming_bd.sort(key=lambda x: x['days_until'])
+    
     return render_template('admin_dashboard.html',
         total_surveys=total_surveys,
         approved_surveys=approved_surveys,
         pending_surveys=pending_surveys,
         total_members=total_members,
         pending_list=pending_list,
-        members_list=members_list
+        members_list=members_list,
+        upcoming_bd=upcoming_bd
     )
 
 @app.route('/api/approve/<int:survey_id>', methods=['POST'])
@@ -206,6 +237,33 @@ def remove_member(member_id):
         db.session.commit()
     
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/api/update_member/<int:member_id>', methods=['POST'])
+def update_member(member_id):
+    if not session.get('admin'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        member = Member.query.get(member_id)
+        
+        if not member:
+            return jsonify({'error': 'Member not found'}), 404
+        
+        if 'title' in data:
+            member.title = data['title']
+        if 'emoji' in data:
+            member.emoji = data['emoji']
+        if 'birth_date' in data:
+            member.birth_date = data['birth_date']
+        if 'name' in data:
+            member.name = data['name']
+        
+        db.session.commit()
+        return jsonify({'status': 'success'})
+    
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 400
 
 @app.route('/api/clear_surveys', methods=['POST'])
 def clear_surveys():
@@ -255,9 +313,9 @@ def export_members():
         return jsonify({'error': 'Unauthorized'}), 401
     
     members = Member.query.all()
-    csv = "Name,Title,Email,BirthDate\n"
+    csv = "Name,Title,Emoji,BirthDate\n"
     for m in members:
-        csv += f"{m.name},{m.title},{m.bio},{m.birth_date}\n"
+        csv += f"{m.name},{m.title},{m.emoji},{m.birth_date}\n"
     
     return send_file(
         io.BytesIO(csv.encode()),
