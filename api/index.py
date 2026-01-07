@@ -18,13 +18,13 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Telegram config
-TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
-TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
-CHAT_LINK = os.environ.get('CHAT_LINK', 'https://t.me/witchclub')
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '8500508012:AAEMuWXEsZsUfiDiOV50xFw928Tn7VUJRH8')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '-5015136189')
+CHAT_LINK = os.environ.get('CHAT_LINK', 'https://t.me/+S32BT0FT6w0xYTBi')
 
 # Admin credentials
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'password')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'witch2026')
 
 # Models
 class Survey(db.Model):
@@ -200,7 +200,7 @@ def approve_survey(survey_id):
             name=survey.name,
             title=f"Ведьма {survey.hobbies.split()[0] if survey.hobbies else ''}",
             emoji='🧙‍♀️',
-            bio=survey.hobbies[:100],
+            bio=survey.hobbies[:100] if survey.hobbies else '',
             birth_date=survey.birth_date
         )
         db.session.add(member)
