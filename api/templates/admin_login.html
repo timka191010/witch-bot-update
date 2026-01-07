@@ -3,149 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Админка клуба</title>
+    <title>Вход в админку</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: radial-gradient(circle at top, #2b2f5c 0%, #0b1023 40%, #050712 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 16px;
-            color: #f5f5ff;
+            padding: 20px;
         }
 
-        .shell {
-            background: radial-gradient(circle at top, rgba(255,255,255,0.04), rgba(0,0,0,0.7));
-            border-radius: 24px;
-            padding: 18px;
-            box-shadow: 0 18px 60px rgba(0,0,0,0.85);
+        .login-box {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
             width: 100%;
-            max-width: 420px;
-        }
-
-        .inner {
-            background: linear-gradient(145deg, #191c33, #14172b);
-            border-radius: 18px;
-            padding: 26px 22px 22px;
-            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         h1 {
+            color: #fff;
             text-align: center;
-            font-size: 22px;
-            margin-bottom: 8px;
-            text-shadow: 0 0 14px rgba(255,255,255,0.25);
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-shadow: 0 0 20px rgba(139, 0, 139, 0.6);
         }
 
-        .subtitle {
-            text-align: center;
-            font-size: 13px;
-            color: #a7b0ff;
-            margin-bottom: 22px;
+        .form-group {
+            margin-bottom: 20px;
         }
-
-        .form-group { margin-bottom: 16px; }
 
         label {
             display: block;
-            margin-bottom: 6px;
-            font-size: 13px;
-            color: #c7ccff;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px 13px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(9, 12, 28, 0.95);
-            color: #f5f5ff;
+            color: #ddd;
+            margin-bottom: 8px;
+            font-weight: 500;
             font-size: 14px;
-            transition: all 0.15s ease;
         }
 
-        input::placeholder { color: #8087b5; }
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
 
-        input:focus {
+        input[type="password"]:focus {
             outline: none;
-            border-color: #7c8cff;
-            box-shadow: 0 0 0 1px rgba(124,140,255,0.7), 0 0 12px rgba(124,140,255,0.4);
-            background: rgba(12,16,40,0.98);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(139, 0, 139, 0.8);
+            box-shadow: 0 0 10px rgba(139, 0, 139, 0.4);
+        }
+
+        input[type="password"]::placeholder {
+            color: rgba(255, 255, 255, 0.5);
         }
 
         button {
             width: 100%;
-            padding: 11px;
-            border-radius: 999px;
+            padding: 12px;
+            background: linear-gradient(135deg, #8B008B, #4B0082);
             border: none;
-            background: linear-gradient(135deg, #b832ff, #ff3fb3);
-            color: #ffffff;
-            font-size: 15px;
-            font-weight: 600;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 10px 30px rgba(184,50,255,0.7);
-            transition: all 0.15s ease;
-            margin-top: 4px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 14px 40px rgba(184,50,255,0.85);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 0, 139, 0.5);
+        }
+
+        button:active {
+            transform: scale(0.98);
         }
 
         .error {
-            margin-bottom: 16px;
+            display: none;
+            background: rgba(255, 100, 100, 0.15);
+            color: #FF6B6B;
             padding: 12px;
             border-radius: 10px;
-            font-size: 13px;
-            color: #fecaca;
-            background: rgba(127, 29, 29, 0.35);
-            border: 1px solid rgba(248, 113, 113, 0.7);
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 100, 100, 0.4);
             text-align: center;
         }
 
-        .back-link {
-            margin-top: 16px;
+        .error.show {
+            display: block;
+        }
+
+        .info {
             text-align: center;
-            font-size: 13px;
-        }
-
-        .back-link a {
-            color: #a7b0ff;
-            text-decoration: none;
-        }
-
-        .back-link a:hover {
-            text-decoration: underline;
+            color: #aaa;
+            font-size: 12px;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-<div class="shell">
-    <div class="inner">
-        <h1>Вход в админку</h1>
-        <p class="subtitle">Доступ только организаторам клуба</p>
-
+    <div class="login-box">
+        <h1>🧙‍♀️ Админка</h1>
+        
         {% if error %}
-        <div class="error">{{ error }}</div>
+        <div class="error show">{{ error }}</div>
         {% endif %}
 
         <form method="POST">
             <div class="form-group">
-                <label>Пароль</label>
-                <input type="password" name="password" placeholder="Введите пароль" required>
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" placeholder="Введите пароль" required autofocus>
             </div>
+
             <button type="submit">Войти</button>
         </form>
 
-        <div class="back-link">
-            <a href="{{ url_for('index_page') }}">← На главную</a>
+        <div class="info">
+            Панель администратора клуба
         </div>
     </div>
-</div>
 </body>
 </html>
