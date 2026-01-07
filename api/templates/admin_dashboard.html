@@ -111,7 +111,7 @@
             flex: 1;
         }
 
-        .approve-btn, .reject-btn, .remove-btn {
+        .approve-btn, .reject-btn, .remove-btn, .export-btn, .load-btn, .clear-btn {
             padding: 8px 16px;
             border: none;
             border-radius: 6px;
@@ -141,16 +141,14 @@
             background: rgba(255, 100, 100, 0.5);
         }
 
-        .empty {
-            text-align: center;
-            color: #aaa;
-            padding: 30px;
+        .export-btn, .load-btn {
+            background: rgba(100, 150, 255, 0.3);
+            color: #6496FF;
+            border: 1px solid rgba(100, 150, 255, 0.4);
         }
 
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+        .export-btn:hover, .load-btn:hover {
+            background: rgba(100, 150, 255, 0.5);
         }
 
         .clear-btn {
@@ -165,6 +163,19 @@
 
         .clear-btn:hover {
             background: rgba(255, 150, 0, 0.5);
+        }
+
+        .empty {
+            text-align: center;
+            color: #aaa;
+            padding: 30px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
     </style>
 </head>
@@ -197,6 +208,7 @@
         <div class="section">
             <h2>📋 Анкеты на проверке</h2>
             <div class="controls">
+                <button id="load-btn" class="load-btn">📥 Загрузить 8 участниц</button>
                 <form method="POST" action="{{ url_for('clear_surveys') }}" style="display: inline;">
                     <button type="submit" class="clear-btn" onclick="return confirm('Очистить все анкеты?')">🗑️ Очистить</button>
                 </form>
@@ -223,6 +235,9 @@
 
         <div class="section">
             <h2>👥 Участницы клуба</h2>
+            <div class="controls">
+                <a href="{{ url_for('export_members') }}" class="export-btn">📥 Экспорт CSV</a>
+            </div>
             {% if members_list %}
                 {% for member in members_list %}
                 <div class="member-item">
@@ -240,5 +255,32 @@
             {% endif %}
         </div>
     </div>
+
+    <script>
+        document.getElementById('load-btn').addEventListener('click', async () => {
+            if (!confirm('Загрузить 8 участниц из JSON в БД?')) return;
+            
+            const btn = document.getElementById('load-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Загружаю...';
+            
+            try {
+                const response = await fetch('/admin/load-members', {method: 'POST'});
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    alert(`✅ Загружено ${data.loaded} участниц!`);
+                    location.reload();
+                } else {
+                    alert('❌ Ошибка: ' + data.message);
+                }
+            } catch (e) {
+                alert('❌ Ошибка: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📥 Загрузить 8 участниц';
+            }
+        });
+    </script>
 </body>
 </html>
