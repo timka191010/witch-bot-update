@@ -3,195 +3,330 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Статистика клуба</title>
+    <title>Статистика админа</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: radial-gradient(circle at top, #2b2f5c 0%, #0b1023 40%, #050712 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
             min-height: 100vh;
-            padding: 12px;
-            color: #f5f5ff;
+            padding: 20px;
         }
 
-        .topbar {
-            width: 100%;
-            max-width: 100%;
-            margin: 0 auto 18px;
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(90deg, #14172b, #181b34);
-            border-radius: 16px;
-            padding: 10px 14px;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .topbar-title { font-size: 16px; font-weight: 600; }
+        h1 {
+            font-size: 28px;
+            text-shadow: 0 0 20px rgba(139, 0, 139, 0.6);
+        }
 
-        .topbar-actions {
+        .nav-buttons {
             display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .btn {
-            padding: 8px 14px;
-            border-radius: 999px;
-            border: 1px solid rgba(255,255,255,0.18);
-            background: rgba(17, 22, 45, 0.9);
-            color: #d9dcff;
-            font-size: 13px;
+            padding: 10px 20px;
+            background: rgba(100, 150, 255, 0.3);
+            border: 1px solid rgba(100, 150, 255, 0.5);
+            border-radius: 8px;
+            color: #6496FF;
             cursor: pointer;
             text-decoration: none;
-            transition: all 0.2s ease;
-            white-space: nowrap;
+            font-weight: 500;
+            transition: all 0.3s ease;
         }
 
         .btn:hover {
-            background: rgba(32, 39, 82, 0.98);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+            background: rgba(100, 150, 255, 0.5);
         }
 
-        .btn-danger {
-            border-color: rgba(248,113,113,0.6);
-            color: #fecaca;
+        .logout-btn {
+            background: rgba(255, 100, 100, 0.2);
+            border: 1px solid rgba(255, 100, 100, 0.5);
+            color: #FF6B6B;
         }
 
-        .layout {
-            max-width: 1100px;
-            margin: 0 auto;
+        .logout-btn:hover {
+            background: rgba(255, 100, 100, 0.3);
+        }
+
+        .stats-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
         }
 
-        @media (max-width: 900px) {
-            .layout { grid-template-columns: minmax(0, 1fr); }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
         }
 
-        .shell {
-            background: radial-gradient(circle at top, rgba(255,255,255,0.04), rgba(0,0,0,0.7));
-            border-radius: 24px;
-            padding: 16px;
-            box-shadow: 0 18px 60px rgba(0,0,0,0.8);
+        .stat-card.highlight {
+            background: linear-gradient(135deg, rgba(100, 150, 255, 0.2) 0%, rgba(139, 0, 139, 0.2) 100%);
+            border: 1px solid rgba(100, 150, 255, 0.3);
         }
 
-        .inner {
-            background: linear-gradient(145deg, #191c33, #14172b);
-            border-radius: 18px;
-            padding: 20px 18px 18px;
-            border: 1px solid rgba(255,255,255,0.06);
+        .stat-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: #FFD700;
+            margin: 10px 0;
         }
 
-        h2 { font-size: 18px; margin-bottom: 12px; }
-
-        .stat-line {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+        .stat-label {
             font-size: 14px;
+            color: #aaa;
         }
 
-        .stat-line:last-child { border-bottom: none; }
+        .section {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
 
-        .badge {
+        .section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            color: #FFD700;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .status-badge {
             display: inline-block;
-            padding: 2px 8px;
-            border-radius: 999px;
-            background: rgba(9,12,28,0.9);
-            border: 1px solid rgba(255,255,255,0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
             font-size: 12px;
+            font-weight: 600;
         }
 
-        .sources-list {
-            margin-top: 8px;
-            font-size: 13px;
+        .status-approved {
+            background: rgba(0, 200, 100, 0.3);
+            color: #00FF88;
+            border: 1px solid rgba(0, 255, 100, 0.4);
         }
 
-        .sources-list div {
+        .status-pending {
+            background: rgba(255, 150, 0, 0.3);
+            color: #FFB800;
+            border: 1px solid rgba(255, 150, 0, 0.4);
+        }
+
+        .date-stat {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
-            padding: 4px 0;
+            align-items: center;
+        }
+
+        .date-info {
+            font-weight: 500;
+        }
+
+        .date-counts {
+            display: flex;
+            gap: 20px;
+        }
+
+        .count-item {
+            text-align: center;
+        }
+
+        .count-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .count-label {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .empty {
+            text-align: center;
+            color: #aaa;
+            padding: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00FF88, #FFD700);
+            transition: width 0.3s ease;
         }
     </style>
 </head>
 <body>
-<div class="topbar">
-    <div class="topbar-title">Статистика клуба</div>
-    <div class="topbar-actions">
-        <a href="{{ url_for('admin_dashboard') }}" class="btn">К заявкам</a>
-        <a href="{{ url_for('index_page') }}" class="btn">На сайт</a>
-        <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">Выйти</a>
-    </div>
-</div>
+    <div class="container">
+        <header>
+            <h1>📊 Статистика клуба</h1>
+            <div class="nav-buttons">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn">← Вернуться</a>
+                <a href="{{ url_for('admin_logout') }}" class="logout-btn btn">Выход</a>
+            </div>
+        </header>
 
-<div class="layout">
-    <div class="shell">
-        <div class="inner">
-            <h2>Анкеты</h2>
-            <div class="stat-line">
-                <span>Всего анкет</span>
-                <span class="badge">{{ stats.total }}</span>
+        <div class="stats-grid">
+            <div class="stat-card highlight">
+                <div class="stat-label">Всего анкет</div>
+                <div class="stat-number">{{ total_surveys }}</div>
             </div>
-            <div class="stat-line">
-                <span>Одобрено</span>
-                <span class="badge">{{ stats.approved }}</span>
+            <div class="stat-card">
+                <div class="stat-label">Одобрено</div>
+                <div class="stat-number" style="color: #00FF88;">{{ approved_surveys }}</div>
+                {% if total_surveys > 0 %}
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ (approved_surveys / total_surveys * 100)|int }}%"></div>
+                </div>
+                <small style="color: #aaa;">{{ ((approved_surveys / total_surveys * 100)|int) }}%</small>
+                {% endif %}
             </div>
-            <div class="stat-line">
-                <span>В ожидании</span>
-                <span class="badge">{{ stats.pending }}</span>
+            <div class="stat-card">
+                <div class="stat-label">На проверке</div>
+                <div class="stat-number" style="color: #FFB800;">{{ pending_surveys }}</div>
+                {% if total_surveys > 0 %}
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ (pending_surveys / total_surveys * 100)|int }}%; background: #FFB800;"></div>
+                </div>
+                <small style="color: #aaa;">{{ ((pending_surveys / total_surveys * 100)|int) }}%</small>
+                {% endif %}
             </div>
-            <div class="stat-line">
-                <span>Отклонено</span>
-                <span class="badge">{{ stats.rejected }}</span>
-            </div>
-            <div class="stat-line">
-                <span>Участниц в клубе</span>
-                <span class="badge">{{ stats.members_count }}</span>
+            <div class="stat-card highlight">
+                <div class="stat-label">Участниц в клубе</div>
+                <div class="stat-number">{{ total_members }}</div>
             </div>
         </div>
-    </div>
 
-    <div class="shell">
-        <div class="inner">
-            <h2>Состав</h2>
-            <div class="stat-line">
-                <span>Замужем</span>
-                <span class="badge">{{ stats.married }}</span>
-            </div>
-            <div class="stat-line">
-                <span>Не замужем</span>
-                <span class="badge">{{ stats.single }}</span>
-            </div>
-            <div class="stat-line">
-                <span>С детьми</span>
-                <span class="badge">{{ stats.with_kids }}</span>
-            </div>
-            <div class="stat-line">
-                <span>Без детей</span>
-                <span class="badge">{{ stats.no_kids }}</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="shell" style="grid-column: 1 / -1;">
-        <div class="inner">
-            <h2>Откуда узнают о клубе</h2>
-            <div class="sources-list">
-                {% for source, count in stats.sources.items() %}
-                <div>
-                    <span>{{ source }}</span>
-                    <span class="badge">{{ count }}</span>
+        <div class="section">
+            <h2>📅 Анкеты по датам</h2>
+            {% if surveys_by_date %}
+                {% for date in surveys_by_date|dictsort(reverse=True) %}
+                <div class="date-stat">
+                    <div class="date-info">
+                        <strong>{{ date[0] }}</strong>
+                    </div>
+                    <div class="date-counts">
+                        <div class="count-item">
+                            <div class="count-number">{{ date[1].total }}</div>
+                            <div class="count-label">Всего</div>
+                        </div>
+                        <div class="count-item">
+                            <div class="count-number" style="color: #00FF88;">{{ date[1].approved }}</div>
+                            <div class="count-label">Одобрено</div>
+                        </div>
+                        <div class="count-item">
+                            <div class="count-number" style="color: #FFB800;">{{ date[1].pending }}</div>
+                            <div class="count-label">На проверке</div>
+                        </div>
+                    </div>
                 </div>
                 {% endfor %}
+            {% else %}
+            <div class="empty">Нет данных</div>
+            {% endif %}
+        </div>
+
+        <div class="section">
+            <h2>📝 Все анкеты ({{ survey_list|length }})</h2>
+            {% if survey_list %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Имя</th>
+                            <th>Email</th>
+                            <th>Возраст</th>
+                            <th>Специальность</th>
+                            <th>Дата отправки</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for survey in survey_list %}
+                        <tr>
+                            <td><strong>{{ survey.name }}</strong></td>
+                            <td>{{ survey.email }}</td>
+                            <td>{{ survey.age }}</td>
+                            <td>{{ survey.hobbies }}</td>
+                            <td>{{ survey.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td>
+                                {% if survey.approved %}
+                                <span class="status-badge status-approved">✅ Одобрена</span>
+                                {% else %}
+                                <span class="status-badge status-pending">⏳ На проверке</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            {% else %}
+            <div class="empty">Нет анкет</div>
+            {% endif %}
         </div>
     </div>
-</div>
 </body>
 </html>
