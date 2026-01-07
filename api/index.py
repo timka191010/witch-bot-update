@@ -1,7 +1,6 @@
 import os
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import secure_filename
 from datetime import datetime
 import io
 import json
@@ -49,10 +48,6 @@ def index():
     members = Member.query.all()
     return render_template('index.html', members=members)
 
-@app.route('/survey', methods=['GET'])
-def survey():
-    return render_template('survey.html')
-
 @app.route('/api/survey', methods=['POST'])
 def submit_survey():
     try:
@@ -85,8 +80,6 @@ def get_members():
 @app.route('/api/upcoming-birthdays', methods=['GET'])
 def upcoming_birthdays():
     """Получить ближайшие дни рождения (на следующие 30 дней)"""
-    from datetime import timedelta
-    
     members = Member.query.all()
     today = datetime.now()
     upcoming = []
@@ -96,12 +89,9 @@ def upcoming_birthdays():
             continue
         
         try:
-            # Парсим дату в формате DD.MM.YYYY
             birth_parts = member.birth_date.split('.')
             if len(birth_parts) == 3:
                 day, month, year = int(birth_parts[0]), int(birth_parts[1]), int(birth_parts[2])
-                
-                # Ближайший день рождения в этом году
                 next_birthday = datetime(today.year, month, day)
                 if next_birthday < today:
                     next_birthday = datetime(today.year + 1, month, day)
@@ -119,7 +109,6 @@ def upcoming_birthdays():
         except:
             pass
     
-    # Сортируем по дате
     upcoming.sort(key=lambda x: x['days_until'])
     return jsonify(upcoming)
 
@@ -156,7 +145,6 @@ def admin_dashboard():
     members_list = Member.query.all()
     
     # Получить ближайшие дни рождения
-    from datetime import timedelta
     today = datetime.now()
     upcoming_bd = []
     
@@ -196,6 +184,41 @@ def admin_dashboard():
         upcoming_bd=upcoming_bd
     )
 
+@app.route('/admin/stats')
+def admin_stats():
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    
+    total_surveys = Survey.query.count()
+    approved_surveys = Survey.query.filter_by(approved=True).count()
+    pending_surveys = Survey.query.filter_by(approved=False).count()
+    total_members = Member.query.count()
+    
+    # Статистика по датам
+    surveys_by_date = {}
+    all_surveys = Survey.query.all()
+    
+    for survey in all_surveys:
+        date_str = survey.created_at.strftime('%d.%m.%Y')
+        if date_str not in surveys_by_date:
+            surveys_by_date[date_str] = {'total': 0, 'approved': 0, 'pending': 0}
+        surveys_by_date[date_str]['total'] += 1
+        if survey.approved:
+            surveys_by_date[date_str]['approved'] += 1
+        else:
+            surveys_by_date[date_str]['pending'] += 1
+    
+    survey_list = Survey.query.order_by(Survey.created_at.desc()).all()
+    
+    return render_template('admin_stats.html',
+        total_surveys=total_surveys,
+        approved_surveys=approved_surveys,
+        pending_surveys=pending_surveys,
+        total_members=total_members,
+        surveys_by_date=surveys_by_date,
+        survey_list=survey_list
+    )
+
 @app.route('/api/approve/<int:survey_id>', methods=['POST'])
 def approve_survey(survey_id):
     if not session.get('admin'):
@@ -205,7 +228,6 @@ def approve_survey(survey_id):
     if survey:
         survey.approved = True
         
-        # Создаём участницу
         member = Member(
             name=survey.name,
             title=survey.hobbies,
@@ -281,7 +303,6 @@ def clear_surveys():
 
 @app.route('/admin/load-members', methods=['POST'])
 def load_members_from_json():
-    """Загрузи членов из JSON в БД"""
     if not session.get('admin'):
         return jsonify({'error': 'Unauthorized'}), 401
     
@@ -292,7 +313,6 @@ def load_members_from_json():
         
         count = 0
         for m in members_data:
-            # Проверь дубликаты
             existing = Member.query.filter_by(name=m['name']).first()
             if not existing:
                 member = Member(
