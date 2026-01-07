@@ -49,9 +49,13 @@ def index():
     members = Member.query.all()
     return render_template('index.html', members=members)
 
-@app.route('/survey', methods=['GET', 'POST'])
+@app.route('/survey', methods=['GET'])
 def survey():
-    if request.method == 'POST':
+    return render_template('survey.html')
+
+@app.route('/api/survey', methods=['POST'])
+def submit_survey():
+    try:
         data = request.get_json()
         
         survey = Survey(
@@ -64,8 +68,8 @@ def survey():
         db.session.commit()
         
         return jsonify({'status': 'success', 'id': survey.id})
-    
-    return render_template('survey.html')
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 400
 
 @app.route('/api/members', methods=['GET'])
 def get_members():
