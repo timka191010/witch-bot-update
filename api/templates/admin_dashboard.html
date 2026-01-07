@@ -38,6 +38,27 @@
             text-shadow: 0 0 20px rgba(139, 0, 139, 0.6);
         }
 
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-nav {
+            padding: 10px 20px;
+            background: rgba(100, 150, 255, 0.3);
+            border: 1px solid rgba(100, 150, 255, 0.5);
+            border-radius: 8px;
+            color: #6496FF;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-nav:hover {
+            background: rgba(100, 150, 255, 0.5);
+        }
+
         .logout-btn {
             padding: 10px 20px;
             background: rgba(255, 100, 100, 0.2);
@@ -178,7 +199,6 @@
             flex-wrap: wrap;
         }
 
-        /* Модальное окно */
         .modal {
             display: none;
             position: fixed;
@@ -303,7 +323,10 @@
     <div class="container">
         <header>
             <h1>🧙‍♀️ Админпанель</h1>
-            <a href="{{ url_for('admin_logout') }}" class="logout-btn">Выход</a>
+            <div class="nav-buttons">
+                <a href="{{ url_for('admin_stats') }}" class="btn-nav">📊 Статистика</a>
+                <a href="{{ url_for('admin_logout') }}" class="logout-btn">Выход</a>
+            </div>
         </header>
 
         <div class="stats">
@@ -325,7 +348,6 @@
             </div>
         </div>
 
-        <!-- БЛИЖАЙШИЕ ДНИ РОЖДЕНИЯ -->
         {% if upcoming_bd %}
         <div class="section">
             <h2>🎂 Ближайшие дни рождения</h2>
@@ -349,7 +371,6 @@
         </div>
         {% endif %}
 
-        <!-- АНКЕТЫ НА ПРОВЕРКЕ -->
         <div class="section">
             <h2>📋 Анкеты на проверке</h2>
             <div class="controls">
@@ -378,7 +399,6 @@
             {% endif %}
         </div>
 
-        <!-- УЧАСТНИЦЫ КЛУБА -->
         <div class="section">
             <h2>👥 Участницы клуба</h2>
             <div class="controls">
@@ -408,7 +428,6 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeEditModal()">&times;</span>
@@ -514,7 +533,6 @@
             }
         });
 
-        // Закрыть модаль при клике вне её
         window.addEventListener('click', (event) => {
             const modal = document.getElementById('editModal');
             if (event.target === modal) {
