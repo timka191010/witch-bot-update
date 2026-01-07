@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Анкета "Ведьмы не стареют"</title>
+    <title>Клуб ведьм - Ведьмы не стареют</title>
     <style>
         * {
             margin: 0;
@@ -12,42 +12,183 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
             min-height: 100vh;
+        }
+
+        header {
+            background: rgba(0, 0, 0, 0.3);
             padding: 20px;
-            color: #e0e0e0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(139, 0, 139, 0.6);
+        }
+
+        .admin-btn {
+            padding: 10px 20px;
+            background: rgba(100, 150, 255, 0.3);
+            border: 1px solid rgba(100, 150, 255, 0.5);
+            border-radius: 8px;
+            color: #6496FF;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .admin-btn:hover {
+            background: rgba(100, 150, 255, 0.5);
         }
 
         .container {
-            max-width: 700px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: rgba(30, 30, 50, 0.95);
+            padding: 40px 20px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(139, 0, 139, 0.6);
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, rgba(0, 200, 100, 0.4) 0%, rgba(100, 150, 255, 0.4) 100%);
+            color: #00FF88;
+            border: 1px solid rgba(0, 255, 100, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, rgba(0, 200, 100, 0.6) 0%, rgba(100, 150, 255, 0.6) 100%);
+            box-shadow: 0 0 20px rgba(0, 255, 100, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 150, 0, 0.3);
+            color: #FFB800;
+            border: 1px solid rgba(255, 150, 0, 0.4);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 150, 0, 0.5);
+        }
+
+        .section {
+            margin-bottom: 60px;
+        }
+
+        .section-title {
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(139, 0, 139, 0.4);
+        }
+
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .member-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .member-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(100, 150, 255, 0.5);
+            box-shadow: 0 0 20px rgba(100, 150, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .member-emoji {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .member-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .member-title {
+            color: #FFD700;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .member-bio {
+            color: #aaa;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .form-section {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 15px;
             padding: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(100, 70, 150, 0.3);
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        .header {
+        .form-title {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .form-subtitle {
+            color: #aaa;
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 2px solid rgba(100, 70, 150, 0.5);
-            padding-bottom: 20px;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, #d4af37 0%, #9d8b4a 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .header p {
             font-size: 14px;
-            color: #b0b0b0;
         }
 
         .form-group {
@@ -59,134 +200,84 @@
             margin-bottom: 8px;
             font-weight: 500;
             font-size: 14px;
-            color: #e0e0e0;
         }
 
-        .required {
-            color: #ff6b6b;
-        }
-
-        input[type="text"],
-        input[type="email"],
-        input[type="date"],
-        input[type="number"],
-        select,
-        textarea {
+        input, select, textarea {
             width: 100%;
             padding: 12px;
-            border: 1px solid rgba(100, 70, 150, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
-            background: rgba(40, 40, 70, 0.8);
-            color: #e0e0e0;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-family: inherit;
             font-size: 14px;
             transition: all 0.3s ease;
-            font-family: inherit;
         }
 
-        input[type="text"]::placeholder,
-        input[type="email"]::placeholder,
-        input[type="date"]::placeholder,
-        input[type="number"]::placeholder,
-        textarea::placeholder {
-            color: #888;
-        }
-
-        input[type="text"]:focus,
-        input[type="email"]:focus,
-        input[type="date"]:focus,
-        input[type="number"]:focus,
-        select:focus,
-        textarea:focus {
+        input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #d4af37;
-            background: rgba(40, 40, 70, 1);
-            box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+            border-color: #6496FF;
+            background: rgba(100, 150, 255, 0.1);
+            box-shadow: 0 0 10px rgba(100, 150, 255, 0.3);
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: #888;
         }
 
         textarea {
             resize: vertical;
-            min-height: 100px;
+            min-height: 80px;
         }
 
-        select {
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d4af37' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            padding-right: 36px;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: #d4af37;
-        }
-
-        .checkbox-group label {
-            margin: 0;
-            cursor: pointer;
-            font-size: 13px;
-        }
-
-        .button-group {
+        .form-buttons {
             display: flex;
             gap: 10px;
             margin-top: 30px;
         }
 
-        button {
+        .form-buttons button {
             flex: 1;
-            padding: 14px;
+            padding: 12px;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .btn-submit {
-            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
-            color: #ffffff;
-            order: 2;
+            background: linear-gradient(135deg, rgba(0, 200, 100, 0.4) 0%, rgba(100, 150, 255, 0.4) 100%);
+            color: #00FF88;
+            border: 1px solid rgba(0, 255, 100, 0.4);
         }
 
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(46, 204, 113, 0.4);
+        .btn-submit:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(0, 200, 100, 0.6) 0%, rgba(100, 150, 255, 0.6) 100%);
+            box-shadow: 0 0 20px rgba(0, 255, 100, 0.3);
         }
 
-        .btn-submit:active {
-            transform: translateY(0);
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .btn-reset {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            color: #ffffff;
-            order: 1;
+            background: rgba(255, 100, 100, 0.2);
+            color: #FF6B6B;
+            border: 1px solid rgba(255, 100, 100, 0.4);
         }
 
         .btn-reset:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(231, 76, 60, 0.4);
+            background: rgba(255, 100, 100, 0.3);
         }
 
         .success-message {
             display: none;
-            background: rgba(46, 204, 113, 0.2);
-            border: 1px solid #2ecc71;
-            color: #2ecc71;
+            background: rgba(0, 200, 100, 0.2);
+            border: 1px solid rgba(0, 255, 100, 0.4);
+            color: #00FF88;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -195,220 +286,254 @@
 
         .error-message {
             display: none;
-            background: rgba(231, 76, 60, 0.2);
-            border: 1px solid #e74c3c;
-            color: #e74c3c;
+            background: rgba(255, 100, 100, 0.2);
+            border: 1px solid rgba(255, 100, 100, 0.4);
+            color: #FF6B6B;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
             text-align: center;
         }
 
-        .loading {
-            display: none;
+        .required {
+            color: #FF6B6B;
+        }
+
+        footer {
             text-align: center;
-            color: #d4af37;
+            padding: 40px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #aaa;
+            font-size: 14px;
         }
 
-        .spinner {
-            border: 3px solid rgba(212, 175, 55, 0.2);
-            border-top: 3px solid #d4af37;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+        .toggle-form-btn {
+            display: block;
+            margin: 30px auto;
+            padding: 12px 30px;
+            background: rgba(100, 150, 255, 0.3);
+            border: 1px solid rgba(100, 150, 255, 0.5);
+            border-radius: 8px;
+            color: #6496FF;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .toggle-form-btn:hover {
+            background: rgba(100, 150, 255, 0.5);
         }
 
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+        .form-hidden {
+            display: none;
         }
 
-        @media (max-width: 600px) {
-            .container {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 22px;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
+    <header>
+        <div class="logo">🧙‍♀️ Ведьмы не стареют</div>
+        <a href="/admin/login" class="admin-btn">🔐 Админка</a>
+    </header>
+
     <div class="container">
-        <div class="header">
-            <h1>✨ Ведьмы не стареют ✨</h1>
-            <p>Анкета для вступления в клуб</p>
+        <!-- ГЕРОИЧЕСКИЙ РАЗДЕЛ -->
+        <div class="hero">
+            <h1>Добро пожаловать в клуб ведьм! 🌙✨</h1>
+            <p>Место, где собираются самые волшебные женщины нашего времени</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" onclick="scrollToForm()">📝 Присоединиться</button>
+                <a href="#members" class="btn btn-secondary">👥 Участницы</a>
+            </div>
         </div>
 
-        <div class="success-message" id="successMessage">
-            ✅ Спасибо! Ваша анкета отправлена на рассмотрение.
+        <!-- УЧАСТНИЦЫ -->
+        <div class="section" id="members">
+            <h2 class="section-title">👥 Наши участницы</h2>
+            <div class="members-grid" id="membersContainer">
+                <div style="text-align: center; color: #aaa; grid-column: 1 / -1;">
+                    ⏳ Загружаю участниц...
+                </div>
+            </div>
         </div>
 
-        <div class="error-message" id="errorMessage">
-            ❌ Ошибка! Пожалуйста, заполните все обязательные поля.
+        <!-- КНОПКА ПОКАЗАТЬ ФОРМУ -->
+        <button class="toggle-form-btn" id="toggleFormBtn" onclick="toggleForm()">📝 Заполнить анкету</button>
+
+        <!-- ФОРМА АНКЕТЫ -->
+        <div class="section form-hidden" id="formSection">
+            <div class="form-section">
+                <h2 class="form-title">🧙‍♀️ Анкета для вступления</h2>
+                <p class="form-subtitle">Заполните форму, чтобы присоединиться к клубу</p>
+
+                <div class="success-message" id="successMessage">
+                    ✅ Спасибо! Ваша анкета успешно отправлена. Ожидайте одобрения!
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+
+                <form id="surveyForm">
+                    <div class="form-group">
+                        <label>Имя <span class="required">*</span></label>
+                        <input type="text" id="name" placeholder="Ваше имя" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email <span class="required">*</span></label>
+                        <input type="email" id="email" placeholder="your@email.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Возраст <span class="required">*</span></label>
+                        <input type="number" id="age" placeholder="25" min="18" max="120" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Семейное положение <span class="required">*</span></label>
+                        <select id="maritalStatus" required>
+                            <option value="">Выберите...</option>
+                            <option value="свободна">Свободна</option>
+                            <option value="замужем">Замужем</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Специальность / Навыки <span class="required">*</span></label>
+                        <textarea id="hobbies" placeholder="Например: Ведьма трав и эликсиров, Ведьма звёзд, и т.д." required></textarea>
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="reset" class="btn-reset">🔄 Очистить</button>
+                        <button type="submit" class="btn-submit" id="submitBtn">📤 Отправить</button>
+                    </div>
+                </form>
+            </div>
         </div>
-
-        <form id="surveyForm">
-            <!-- Ваше имя -->
-            <div class="form-group">
-                <label for="name">Ваше имя <span class="required">*</span></label>
-                <input type="text" id="name" name="name" placeholder="Введите ваше имя" required>
-            </div>
-
-            <!-- Дата рождения -->
-            <div class="form-group">
-                <label for="birthDate">Дата рождения <span class="required">*</span></label>
-                <input type="date" id="birthDate" name="birthDate" required>
-            </div>
-
-            <!-- Telegram @ -->
-            <div class="form-group">
-                <label for="telegram">Telegram @ <span class="required">*</span></label>
-                <input type="text" id="telegram" name="telegram" placeholder="username (без @)" required>
-            </div>
-
-            <!-- Семейное положение -->
-            <div class="form-group">
-                <label for="maritalStatus">Семейное положение <span class="required">*</span></label>
-                <select id="maritalStatus" name="maritalStatus" required>
-                    <option value="">Выберите...</option>
-                    <option value="свободна">Свободна</option>
-                    <option value="замужем">Замужем</option>
-                </select>
-            </div>
-
-            <!-- Дети -->
-            <div class="form-group">
-                <label for="children">Дети (возраст, пол)</label>
-                <textarea id="children" name="children" placeholder="Например: дочь, 7 лет; сын, 3 года"></textarea>
-            </div>
-
-            <!-- Увлечения и хобби -->
-            <div class="form-group">
-                <label for="hobbies">Увлечения и хобби <span class="required">*</span></label>
-                <textarea id="hobbies" name="hobbies" placeholder="Расскажите о ваших интересах..." required></textarea>
-            </div>
-
-            <!-- Интересные темы -->
-            <div class="form-group">
-                <label for="topics">Интересные темы <span class="required">*</span></label>
-                <textarea id="topics" name="topics" placeholder="Какие встречи и темы вам интересны?" required></textarea>
-            </div>
-
-            <!-- Цель вступления -->
-            <div class="form-group">
-                <label for="goal">Цель вступления <span class="required">*</span></label>
-                <textarea id="goal" name="goal" placeholder="Почему вы хотите присоединиться?" required></textarea>
-            </div>
-
-            <!-- Откуда узнали о клубе -->
-            <div class="form-group">
-                <label for="source">Откуда узнали о клубе? <span class="required">*</span></label>
-                <input type="text" id="source" name="source" placeholder="Имя подруги" required>
-            </div>
-
-            <!-- Checkbox согласие -->
-            <div class="checkbox-group">
-                <input type="checkbox" id="agreement" name="agreement" required>
-                <label for="agreement">Я согласна получить ссылку на Telegram-чат и присоединиться к сообществу</label>
-            </div>
-
-            <!-- Buttons -->
-            <div class="button-group">
-                <button type="reset" class="btn-reset">🗑️ Очистить</button>
-                <button type="submit" class="btn-submit">📨 Отправить</button>
-            </div>
-
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p>Отправка...</p>
-            </div>
-        </form>
     </div>
 
-    <script>
-        const form = document.getElementById('surveyForm');
-        const successMessage = document.getElementById('successMessage');
-        const errorMessage = document.getElementById('errorMessage');
-        const loading = document.getElementById('loading');
+    <footer>
+        <p>© 2026 Клуб ведьм "Ведьмы не стареют" 🧙‍♀️✨</p>
+    </footer>
 
-        form.addEventListener('submit', async (e) => {
+    <script>
+        // Загрузить участниц
+        async function loadMembers() {
+            try {
+                const response = await fetch('/api/members');
+                const members = await response.json();
+                
+                const container = document.getElementById('membersContainer');
+                
+                if (members.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; color: #aaa; grid-column: 1 / -1;">Участниц пока нет</div>';
+                    return;
+                }
+                
+                container.innerHTML = members.map(member => `
+                    <div class="member-card">
+                        <div class="member-emoji">${member.emoji}</div>
+                        <div class="member-name">${member.name}</div>
+                        <div class="member-title">${member.title}</div>
+                        <div class="member-bio">${member.bio || 'Нет информации'}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Ошибка загрузки участниц:', error);
+            }
+        }
+
+        // Показать/скрыть форму
+        function toggleForm() {
+            const formSection = document.getElementById('formSection');
+            const toggleBtn = document.getElementById('toggleFormBtn');
+            
+            formSection.classList.toggle('form-hidden');
+            
+            if (!formSection.classList.contains('form-hidden')) {
+                toggleBtn.textContent = '📝 Закрыть анкету';
+                formSection.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                toggleBtn.textContent = '📝 Заполнить анкету';
+            }
+        }
+
+        // Скролл к форме
+        function scrollToForm() {
+            const formSection = document.getElementById('formSection');
+            formSection.classList.remove('form-hidden');
+            document.getElementById('toggleFormBtn').textContent = '📝 Закрыть анкету';
+            formSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Отправить анкету
+        document.getElementById('surveyForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            // Validate
-            if (!form.checkValidity()) {
-                errorMessage.style.display = 'block';
-                successMessage.style.display = 'none';
-                setTimeout(() => {
-                    errorMessage.style.display = 'none';
-                }, 4000);
+            const submitBtn = document.getElementById('submitBtn');
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
+
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+
+            const data = {
+                name: document.getElementById('name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                age: parseInt(document.getElementById('age').value),
+                hobbies: document.getElementById('hobbies').value.trim()
+            };
+
+            if (!data.name || !data.email || !data.age || !data.hobbies) {
+                errorMsg.textContent = '❌ Заполните все поля!';
+                errorMsg.style.display = 'block';
                 return;
             }
 
-            // Show loading
-            loading.style.display = 'block';
-            successMessage.style.display = 'none';
-            errorMessage.style.display = 'none';
+            if (data.age < 18) {
+                errorMsg.textContent = '❌ Вам должно быть минимум 18 лет!';
+                errorMsg.style.display = 'block';
+                return;
+            }
 
-            // Collect data
-            const formData = {
-                name: document.getElementById('name').value.trim(),
-                birthDate: document.getElementById('birthDate').value,
-                telegram: document.getElementById('telegram').value.trim().replace('@', ''),
-                maritalStatus: document.getElementById('maritalStatus').value,
-                children: document.getElementById('children').value.trim(),
-                hobbies: document.getElementById('hobbies').value.trim(),
-                topics: document.getElementById('topics').value.trim(),
-                goal: document.getElementById('goal').value.trim(),
-                source: document.getElementById('source').value.trim(),
-                agreement: document.getElementById('agreement').checked
-            };
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Отправляю...';
 
             try {
-                const response = await fetch('/api/submit-survey', {
+                const response = await fetch('/api/survey', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(data)
                 });
 
-                const data = await response.json();
+                const result = await response.json();
 
-                if (response.ok) {
-                    successMessage.style.display = 'block';
-                    form.reset();
+                if (result.status === 'success') {
+                    successMsg.style.display = 'block';
+                    document.getElementById('surveyForm').reset();
+                    
                     setTimeout(() => {
-                        successMessage.style.display = 'none';
-                    }, 5000);
+                        toggleForm();
+                    }, 2000);
                 } else {
-                    errorMessage.textContent = data.message || 'Ошибка при отправке!';
-                    errorMessage.style.display = 'block';
+                    errorMsg.textContent = '❌ Ошибка: ' + (result.message || 'Попробуйте снова');
+                    errorMsg.style.display = 'block';
                 }
             } catch (error) {
-                errorMessage.textContent = 'Ошибка подключения!';
-                errorMessage.style.display = 'block';
+                errorMsg.textContent = '❌ Ошибка отправки: ' + error.message;
+                errorMsg.style.display = 'block';
             } finally {
-                loading.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📤 Отправить';
             }
         });
+
+        // Загрузить участниц при загрузке страницы
+        loadMembers();
     </script>
 </body>
 </html>
