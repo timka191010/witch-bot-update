@@ -111,7 +111,7 @@
             flex: 1;
         }
 
-        .approve-btn, .reject-btn, .remove-btn, .export-btn {
+        .approve-btn, .reject-btn, .remove-btn {
             padding: 8px 16px;
             border: none;
             border-radius: 6px;
@@ -139,16 +139,6 @@
 
         .reject-btn:hover, .remove-btn:hover {
             background: rgba(255, 100, 100, 0.5);
-        }
-
-        .export-btn {
-            background: rgba(100, 150, 255, 0.3);
-            color: #6496FF;
-            border: 1px solid rgba(100, 150, 255, 0.4);
-        }
-
-        .export-btn:hover {
-            background: rgba(100, 150, 255, 0.5);
         }
 
         .empty {
@@ -182,7 +172,7 @@
     <div class="container">
         <header>
             <h1>🧙‍♀️ Админпанель</h1>
-            <a href="/admin/logout" class="logout-btn">Выход</a>
+            <a href="{{ url_for('admin_logout') }}" class="logout-btn">Выход</a>
         </header>
 
         <div class="stats">
@@ -207,7 +197,7 @@
         <div class="section">
             <h2>📋 Анкеты на проверке</h2>
             <div class="controls">
-                <form method="POST" action="/api/clear_surveys" style="display: inline;">
+                <form method="POST" action="{{ url_for('clear_surveys') }}" style="display: inline;">
                     <button type="submit" class="clear-btn" onclick="return confirm('Очистить все анкеты?')">🗑️ Очистить</button>
                 </form>
             </div>
@@ -218,10 +208,10 @@
                         <div class="survey-name">{{ survey.name }}</div>
                         <small style="color: #aaa;">{{ survey.email }}</small>
                     </div>
-                    <form method="POST" action="/api/approve/{{ survey.id }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('approve_survey', survey_id=survey.id) }}" style="display: inline;">
                         <button type="submit" class="approve-btn">✅ Одобрить</button>
                     </form>
-                    <form method="POST" action="/api/reject/{{ survey.id }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('reject_survey', survey_id=survey.id) }}" style="display: inline;">
                         <button type="submit" class="reject-btn">❌ Отклонить</button>
                     </form>
                 </div>
@@ -233,9 +223,6 @@
 
         <div class="section">
             <h2>👥 Участницы клуба</h2>
-            <div class="controls">
-                <a href="/api/export" class="export-btn">📥 Экспорт CSV</a>
-            </div>
             {% if members_list %}
                 {% for member in members_list %}
                 <div class="member-item">
@@ -243,8 +230,8 @@
                         <div class="survey-name">{{ member.emoji }} {{ member.name }}</div>
                         <small style="color: #FFD700;">{{ member.title }}</small>
                     </div>
-                    <form method="POST" action="/api/remove_member/{{ member.id }}" style="display: inline;">
-                        <button type="submit" class="remove-btn" onclick="return confirm('Удалить {{ member.name }}?')">🗑️ Удалить</button>
+                    <form method="POST" action="{{ url_for('remove_member', member_id=member.id) }}" style="display: inline;">
+                        <button type="submit" class="remove-btn" onclick="return confirm('Удалить?')">🗑️ Удалить</button>
                     </form>
                 </div>
                 {% endfor %}
