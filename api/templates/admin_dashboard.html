@@ -95,7 +95,7 @@
             color: #fff;
         }
 
-        .survey-item, .member-item {
+        .survey-item, .member-item, .birthday-item {
             background: rgba(255, 255, 255, 0.05);
             padding: 15px;
             border-radius: 10px;
@@ -111,7 +111,7 @@
             flex: 1;
         }
 
-        .approve-btn, .reject-btn, .remove-btn, .export-btn, .load-btn, .clear-btn {
+        .approve-btn, .reject-btn, .remove-btn, .export-btn, .load-btn, .clear-btn, .edit-btn {
             padding: 8px 16px;
             border: none;
             border-radius: 6px;
@@ -141,13 +141,13 @@
             background: rgba(255, 100, 100, 0.5);
         }
 
-        .export-btn, .load-btn {
+        .export-btn, .load-btn, .edit-btn {
             background: rgba(100, 150, 255, 0.3);
             color: #6496FF;
             border: 1px solid rgba(100, 150, 255, 0.4);
         }
 
-        .export-btn:hover, .load-btn:hover {
+        .export-btn:hover, .load-btn:hover, .edit-btn:hover {
             background: rgba(100, 150, 255, 0.5);
         }
 
@@ -177,6 +177,126 @@
             margin-bottom: 20px;
             flex-wrap: wrap;
         }
+
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.active {
+            display: block;
+        }
+
+        .modal-content {
+            background-color: #16213e;
+            margin: 5% auto;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            color: #fff;
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-family: inherit;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #6496FF;
+            background: rgba(100, 150, 255, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-save {
+            background: rgba(0, 200, 100, 0.3);
+            color: #00FF88;
+            border: 1px solid rgba(0, 255, 100, 0.4);
+        }
+
+        .btn-save:hover {
+            background: rgba(0, 200, 100, 0.5);
+        }
+
+        .btn-cancel {
+            background: rgba(255, 100, 100, 0.3);
+            color: #FF6B6B;
+            border: 1px solid rgba(255, 100, 100, 0.4);
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 100, 100, 0.5);
+        }
+
+        .birthday-item {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 100, 100, 0.1) 100%);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .days-until {
+            background: rgba(255, 215, 0, 0.3);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: #FFD700;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -205,6 +325,31 @@
             </div>
         </div>
 
+        <!-- БЛИЖАЙШИЕ ДНИ РОЖДЕНИЯ -->
+        {% if upcoming_bd %}
+        <div class="section">
+            <h2>🎂 Ближайшие дни рождения</h2>
+            {% for bd in upcoming_bd %}
+            <div class="birthday-item">
+                <div>
+                    <div class="survey-name">{{ bd.emoji }} {{ bd.name }}</div>
+                    <small style="color: #FFD700;">📅 {{ bd.birth_date }}</small>
+                </div>
+                <div class="days-until">
+                    {% if bd.days_until == 0 %}
+                        🎉 Сегодня!
+                    {% elif bd.days_until == 1 %}
+                        Завтра!
+                    {% else %}
+                        через {{ bd.days_until }} дн.
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- АНКЕТЫ НА ПРОВЕРКЕ -->
         <div class="section">
             <h2>📋 Анкеты на проверке</h2>
             <div class="controls">
@@ -233,6 +378,7 @@
             {% endif %}
         </div>
 
+        <!-- УЧАСТНИЦЫ КЛУБА -->
         <div class="section">
             <h2>👥 Участницы клуба</h2>
             <div class="controls">
@@ -241,10 +387,16 @@
             {% if members_list %}
                 {% for member in members_list %}
                 <div class="member-item">
-                    <div>
+                    <div style="flex: 1;">
                         <div class="survey-name">{{ member.emoji }} {{ member.name }}</div>
                         <small style="color: #FFD700;">{{ member.title }}</small>
+                        {% if member.birth_date %}
+                        <div style="margin-top: 5px;">
+                            <small style="color: #FF6B6B;">🎂 {{ member.birth_date }}</small>
+                        </div>
+                        {% endif %}
                     </div>
+                    <button class="edit-btn" onclick="openEditModal({{ member.id }}, '{{ member.name }}', '{{ member.emoji }}', '{{ member.title }}', '{{ member.birth_date or '' }}')">✏️ Изменить</button>
                     <form method="POST" action="{{ url_for('remove_member', member_id=member.id) }}" style="display: inline;">
                         <button type="submit" class="remove-btn" onclick="return confirm('Удалить?')">🗑️ Удалить</button>
                     </form>
@@ -256,7 +408,87 @@
         </div>
     </div>
 
+    <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeEditModal()">&times;</span>
+            <div class="modal-header">✏️ Редактировать участницу</div>
+            
+            <div class="form-group">
+                <label>Имя:</label>
+                <input type="text" id="memberName" placeholder="Имя">
+            </div>
+
+            <div class="form-group">
+                <label>Эмодзи:</label>
+                <input type="text" id="memberEmoji" placeholder="🧙‍♀️" maxlength="2">
+            </div>
+
+            <div class="form-group">
+                <label>Специальность:</label>
+                <input type="text" id="memberTitle" placeholder="Специальность">
+            </div>
+
+            <div class="form-group">
+                <label>Дата рождения (ДД.МММ.ГГГГ):</label>
+                <input type="text" id="memberBirthDate" placeholder="15.06.1982">
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeEditModal()">Отмена</button>
+                <button class="btn-save" onclick="saveMember()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let currentMemberId = null;
+
+        function openEditModal(id, name, emoji, title, birthDate) {
+            currentMemberId = id;
+            document.getElementById('memberName').value = name;
+            document.getElementById('memberEmoji').value = emoji;
+            document.getElementById('memberTitle').value = title;
+            document.getElementById('memberBirthDate').value = birthDate;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+            currentMemberId = null;
+        }
+
+        function saveMember() {
+            if (!currentMemberId) return;
+
+            const data = {
+                name: document.getElementById('memberName').value,
+                emoji: document.getElementById('memberEmoji').value,
+                title: document.getElementById('memberTitle').value,
+                birth_date: document.getElementById('memberBirthDate').value
+            };
+
+            fetch(`/api/update_member/${currentMemberId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === 'success') {
+                    alert('✅ Участница обновлена!');
+                    location.reload();
+                } else {
+                    alert('❌ Ошибка: ' + result.message);
+                }
+            })
+            .catch(error => {
+                alert('❌ Ошибка: ' + error.message);
+            });
+        }
+
         document.getElementById('load-btn').addEventListener('click', async () => {
             if (!confirm('Загрузить 8 участниц из JSON в БД?')) return;
             
@@ -279,6 +511,14 @@
             } finally {
                 btn.disabled = false;
                 btn.textContent = '📥 Загрузить 8 участниц';
+            }
+        });
+
+        // Закрыть модаль при клике вне её
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeEditModal();
             }
         });
     </script>
