@@ -1,5 +1,3 @@
-# api/index.py - ПОЛНЫЙ КОД
-
 import os
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 from flask_sqlalchemy import SQLAlchemy
