@@ -22,7 +22,7 @@ CORS(app)
 
 BOT_TOKEN = '8500508012:AAEMuWXEsZsUfiDiOV50xFw928Tn7VUJRH8'
 CHAT_LINK = 'https://t.me/+S32BT0FT6w0xYTBi'
-ADMIN_PASSWORD = 'witches2026'  # ← ИЗМЕНИ НА СВОЙ ПАРОЛЬ!
+ADMIN_PASSWORD = 'witches2026'
 
 # ==================== MODELS ====================
 
@@ -155,22 +155,18 @@ def send_telegram_message(username, message_text):
 
 def get_template_path(filename):
     """Получить правильный путь к файлу шаблона"""
-    # Вариант 1: относительный путь от api/
     path1 = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates', filename))
     if os.path.exists(path1):
         return path1
     
-    # Вариант 2: если templates в той же папке
     path2 = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates', filename))
     if os.path.exists(path2):
         return path2
     
-    # Вариант 3: абсолютный путь на Render
     path3 = f'/opt/render/project/src/templates/{filename}'
     if os.path.exists(path3):
         return path3
     
-    # Если ничего не найдено - вернуть первый вариант
     return path1
 
 
@@ -512,6 +508,103 @@ def admin_titles():
         return jsonify({'error': str(e)}), 500
 
 
+# ==================== API - DEFAULT MEMBERS ====================
+
+@app.route('/api/load-default-members', methods=['POST'])
+def load_default_members():
+    """Загрузить 8 дефолтных участников"""
+    try:
+        existing_count = Member.query.count()
+        if existing_count >= 8:
+            return jsonify({'error': 'Участники уже загружены'}), 400
+        
+        default_members = [
+            {'name': 'Мария Зуева', 'title': '🌌 Верховная Ведьма', 'emoji': '🔮'},
+            {'name': 'Юлия Пиндюрина', 'title': '⭐ Ведьма Звёздного Пути', 'emoji': '✨'},
+            {'name': 'Елена Клыкова', 'title': '🌿 Ведьма Трав и Эликсиров', 'emoji': '🌿'},
+            {'name': 'Наталья Гудкова', 'title': '🔥 Ведьма Огненного Круга', 'emoji': '🔥'},
+            {'name': 'Екатерина Когай', 'title': '🌙 Ведьма Лунного Света', 'emoji': '🌙'},
+            {'name': 'Елена Пустовит', 'title': '💎 Ведьма Кристаллов', 'emoji': '💎'},
+            {'name': 'Елена Провосуд', 'title': '⚡ Ведьма Грозовых Ветров', 'emoji': '⚡'},
+            {'name': 'Анна Моисеева', 'title': '🦋 Ведьма Превращений', 'emoji': '🦋'},
+        ]
+        
+        for idx, member_data in enumerate(default_members, 1):
+            survey = Survey(
+                name=member_data['name'],
+                telegram=f'witch_{idx}',
+                approved=True
+            )
+            db.session.add(survey)
+            db.session.flush()
+            
+            member = Member(
+                survey_id=survey.id,
+                name=member_data['name'],
+                title=member_data['title'],
+                emoji=member_data['emoji'],
+                bio=''
+            )
+            db.session.add(member)
+        
+        db.session.commit()
+        
+        members = Member.query.all()
+        return jsonify({
+            'status': 'success',
+            'message': 'Загружено 8 участников',
+            'members': [m.to_dict() for m in members]
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# ==================== INIT DB WITH DEFAULT DATA ====================
+
+def init_db_with_defaults():
+    """Инициализировать БД с 8 дефолтными участницами"""
+    try:
+        if Member.query.count() > 0:
+            print("✅ БД уже инициализирована")
+            return
+        
+        default_members = [
+            {'name': 'Мария Зуева', 'title': '🌌 Верховная Ведьма', 'emoji': '🔮'},
+            {'name': 'Юлия Пиндюрина', 'title': '⭐ Ведьма Звёздного Пути', 'emoji': '✨'},
+            {'name': 'Елена Клыкова', 'title': '🌿 Ведьма Трав и Эликсиров', 'emoji': '🌿'},
+            {'name': 'Наталья Гудкова', 'title': '🔥 Ведьма Огненного Круга', 'emoji': '🔥'},
+            {'name': 'Екатерина Когай', 'title': '🌙 Ведьма Лунного Света', 'emoji': '🌙'},
+            {'name': 'Елена Пустовит', 'title': '💎 Ведьма Кристаллов', 'emoji': '💎'},
+            {'name': 'Елена Провосуд', 'title': '⚡ Ведьма Грозовых Ветров', 'emoji': '⚡'},
+            {'name': 'Анна Моисеева', 'title': '🦋 Ведьма Превращений', 'emoji': '🦋'},
+        ]
+        
+        for idx, member_data in enumerate(default_members, 1):
+            survey = Survey(
+                name=member_data['name'],
+                telegram=f'witch_{idx}',
+                approved=True
+            )
+            db.session.add(survey)
+            db.session.flush()
+            
+            member = Member(
+                survey_id=survey.id,
+                name=member_data['name'],
+                title=member_data['title'],
+                emoji=member_data['emoji'],
+                bio=''
+            )
+            db.session.add(member)
+        
+        db.session.commit()
+        print("✅ Добавлено 8 участниц!")
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Ошибка при инициализации: {e}")
+
+
 # ==================== HEALTH CHECK ====================
 
 @app.route('/api/health', methods=['GET'])
@@ -524,5 +617,6 @@ def health():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        init_db_with_defaults()
     
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=False)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
