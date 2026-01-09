@@ -6,25 +6,21 @@ import requests
 from functools import wraps
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
-app.secret_key = os.environ.get('SECRET_KEY', 'witch-secret-2026')
+app.secret_key = 'witch-secret-2026'
 
 # Database
-database_url = os.environ.get('DATABASE_URL')
-if database_url and database_url.startswith('postgres://'):
-    database_url = database_url.replace('postgres://', 'postgresql://', 1)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///witch_club.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///witch_club.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Telegram config
-TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '8500508012:AAEMuWXEsZsUfiDiOV50xFw928Tn7VUJRH8')
-TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '-5015136189')
-CHAT_LINK = os.environ.get('CHAT_LINK', 'https://t.me/+S32BT0FT6w0xYTBi')
+TELEGRAM_BOT_TOKEN = '8500508012:AAEMuWXEsZsUfiDiOV50xFw928Tn7VUJRH8'
+TELEGRAM_CHAT_ID = '-5015136189'
+CHAT_LINK = 'https://t.me/+S32BT0FT6w0xYTBi'
 
 # Admin credentials
-ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'witch2026')
+ADMIN_USERNAME = 'admin'
+ADMIN_PASSWORD = 'witch2026'
 
 # Models
 class Survey(db.Model):
