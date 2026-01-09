@@ -340,7 +340,6 @@
     </header>
 
     <div class="container">
-        <!-- ГЕРОИЧЕСКИЙ РАЗДЕЛ -->
         <div class="hero">
             <h1>Добро пожаловать в клуб ведьм! 🌙✨</h1>
             <p>Место, где собираются самые волшебные женщины нашего времени</p>
@@ -350,7 +349,6 @@
             </div>
         </div>
 
-        <!-- УЧАСТНИЦЫ -->
         <div class="section" id="members">
             <h2 class="section-title">👥 Наши участницы</h2>
             <div class="members-grid" id="membersContainer">
@@ -360,10 +358,8 @@
             </div>
         </div>
 
-        <!-- КНОПКА ПОКАЗАТЬ ФОРМУ -->
         <button class="toggle-form-btn" id="toggleFormBtn" onclick="toggleForm()">📝 Заполнить анкету</button>
 
-        <!-- ФОРМА АНКЕТЫ -->
         <div class="section form-hidden" id="formSection">
             <div class="form-section">
                 <h2 class="form-title">🧙‍♀️ Анкета для вступления</h2>
@@ -443,7 +439,6 @@
     </footer>
 
     <script>
-        // ✅ Загрузить участниц
         async function loadMembers() {
             try {
                 const response = await fetch('/api/members');
@@ -467,7 +462,7 @@
                         <div class="member-emoji">${member.emoji}</div>
                         <div class="member-name">${member.name}</div>
                         <div class="member-title">${member.title}</div>
-                        <div class="member-bio">${member.bio || 'Нет информации'}</div>
+                        ${member.bio ? `<div class="member-bio">${member.bio}</div>` : ''}
                     </div>
                 `).join('');
             } catch (error) {
@@ -476,7 +471,6 @@
             }
         }
 
-        // Показать/скрыть форму
         function toggleForm() {
             const formSection = document.getElementById('formSection');
             const toggleBtn = document.getElementById('toggleFormBtn');
@@ -491,7 +485,6 @@
             }
         }
 
-        // Скролл к форме
         function scrollToForm() {
             const formSection = document.getElementById('formSection');
             formSection.classList.remove('form-hidden');
@@ -499,7 +492,6 @@
             formSection.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // ✅ Отправить анкету
         document.getElementById('surveyForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -517,7 +509,7 @@
                 about: `Хобби: ${document.getElementById('hobbies').value.trim()}\n\nТемы: ${document.getElementById('topics').value.trim()}\n\nЦель: ${document.getElementById('goal').value.trim()}\n\nОткуда узнала: ${document.getElementById('source').value.trim()}`
             };
 
-            if (!data.name || !data.birth_date || !data.telegram || !data.about) {
+            if (!data.name || !data.birth_date || !data.telegram) {
                 errorMsg.textContent = '❌ Заполните все обязательные поля!';
                 errorMsg.style.display = 'block';
                 return;
@@ -536,19 +528,21 @@
                 });
 
                 const result = await response.json();
+                console.log('📊 Response:', result);
 
-                if (result.status === 'success' || response.ok) {
+                if (response.status === 201 || result.status === 'success') {
                     successMsg.style.display = 'block';
                     document.getElementById('surveyForm').reset();
                     
                     setTimeout(() => {
-                        toggleForm();
+                        window.location.href = '/dashboard';
                     }, 2000);
                 } else {
                     errorMsg.textContent = '❌ Ошибка: ' + (result.error || 'Попробуйте снова');
                     errorMsg.style.display = 'block';
                 }
             } catch (error) {
+                console.error('❌ Fetch error:', error);
                 errorMsg.textContent = '❌ Ошибка отправки: ' + error.message;
                 errorMsg.style.display = 'block';
             } finally {
@@ -557,7 +551,6 @@
             }
         });
 
-        // Загрузить участниц при загрузке страницы
         loadMembers();
     </script>
 </body>
