@@ -127,7 +127,7 @@ def admin_dashboard():
 @app.route('/migrate')
 def migrate():
     try:
-        with open('api/members.json', 'r', encoding='utf-8') as f:
+        with open('members.json', 'r', encoding='utf-8') as f:
             members_data = json.load(f)
         
         count = 0
