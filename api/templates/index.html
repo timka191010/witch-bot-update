@@ -529,7 +529,7 @@
             submitBtn.textContent = '⏳ Отправляю...';
 
             try {
-                const response = await fetch('/api/submit-survey', {
+                const response = await fetch('/api/members', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
