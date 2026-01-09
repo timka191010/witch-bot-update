@@ -189,16 +189,6 @@
             background: rgba(255, 100, 100, 0.6);
         }
 
-        .btn-send {
-            background: rgba(100, 150, 255, 0.4);
-            color: #6496FF;
-            border: 1px solid rgba(100, 150, 255, 0.4);
-        }
-
-        .btn-send:hover {
-            background: rgba(100, 150, 255, 0.6);
-        }
-
         .member-card {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -228,6 +218,12 @@
         .member-title {
             font-size: 13px;
             color: #FFD700;
+        }
+
+        .member-birthday {
+            font-size: 12px;
+            color: #FF69B4;
+            margin-top: 3px;
         }
 
         .member-actions {
@@ -330,6 +326,48 @@
         .stats-close button:hover {
             background: rgba(255, 100, 100, 0.5);
         }
+
+        .birthday-section {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .birthday-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .birthday-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .birthday-info {
+            flex: 1;
+        }
+
+        .birthday-name {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .birthday-date {
+            font-size: 12px;
+            color: #FFD700;
+        }
+
+        .birthday-days {
+            color: #FF69B4;
+            font-weight: bold;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -366,6 +404,13 @@
             <h2 class="section-title">📝 Заявки на вступление</h2>
             <div id="surveysContainer" class="loading">
                 ⏳ Загружаю заявки...
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">🎂 Ближайшие дни рождения</div>
+            <div id="birthdayContainer" class="birthday-section">
+                <div class="loading">⏳ Загружаю дни рождения...</div>
             </div>
         </div>
 
@@ -461,6 +506,68 @@
             document.getElementById('statsModal').classList.remove('active');
         }
 
+        function calculateDaysUntilBirthday(birthDate) {
+            if (!birthDate) return null;
+            
+            const today = new Date();
+            const [day, month] = birthDate.split('.').map(Number);
+            
+            let birthday = new Date(today.getFullYear(), month - 1, day);
+            
+            if (birthday < today) {
+                birthday = new Date(today.getFullYear() + 1, month - 1, day);
+            }
+            
+            const timeDiff = birthday - today;
+            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            
+            return daysDiff;
+        }
+
+        function formatBirthdayDate(birthDate) {
+            if (!birthDate) return '';
+            const [day, month] = birthDate.split('.');
+            const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+            return `${day} ${months[parseInt(month) - 1]}`;
+        }
+
+        async function loadBirthdays() {
+            try {
+                const response = await fetch('/api/members');
+                if (!response.ok) throw new Error('Members failed');
+                
+                const data = await response.json();
+                const members = data.members || [];
+                const container = document.getElementById('birthdayContainer');
+                
+                const upcomingBirthdays = members
+                    .filter(m => m.birth_date)
+                    .map(m => ({
+                        ...m,
+                        daysUntil: calculateDaysUntilBirthday(m.birth_date)
+                    }))
+                    .filter(m => m.daysUntil <= 30 && m.daysUntil >= 0)
+                    .sort((a, b) => a.daysUntil - b.daysUntil);
+                
+                if (upcomingBirthdays.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #aaa;">Нет дней рождений в ближайшие 30 дней</div>';
+                    return;
+                }
+                
+                container.innerHTML = upcomingBirthdays.map(member => `
+                    <div class="birthday-item">
+                        <div class="birthday-info">
+                            <div class="birthday-name">${member.emoji} ${member.name}</div>
+                            <div class="birthday-date">${formatBirthdayDate(member.birth_date)}</div>
+                        </div>
+                        <div class="birthday-days">${member.daysUntil === 0 ? '🎉 Сегодня!' : member.daysUntil === 1 ? '🎂 Завтра!' : member.daysUntil + ' дней'}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Ошибка загрузки дней рождения:', error);
+            }
+        }
+
         async function loadSurveys() {
             try {
                 const response = await fetch('/api/admin/surveys/pending');
@@ -484,7 +591,6 @@
                         </div>
                         <div class="survey-actions">
                             <button class="btn-approve" onclick="approveSurvey('${survey.id}', '${survey.telegram}')">✅ Одобрить</button>
-                            <button class="btn-send" onclick="sendTelegramOnly('${survey.telegram}')">📱 Отправить в ТГ</button>
                             <button class="btn-reject" onclick="rejectSurvey('${survey.id}')">❌ Отклонить</button>
                         </div>
                     </div>
@@ -516,6 +622,7 @@
                             <div class="member-info">
                                 <div class="member-name">${member.name}</div>
                                 <div class="member-title">${member.title}</div>
+                                ${member.birth_date ? `<div class="member-birthday">🎂 ${formatBirthdayDate(member.birth_date)}</div>` : ''}
                             </div>
                         </div>
                         <div class="member-actions">
@@ -575,24 +682,9 @@
                     loadStats();
                     loadSurveys();
                     loadMembers();
+                    loadBirthdays();
                 } else {
                     alert('❌ Ошибка');
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                alert('❌ Ошибка: ' + error.message);
-            }
-        }
-
-        async function sendTelegramOnly(username) {
-            try {
-                const response = await fetch(`/api/send-telegram-test/${username}`);
-                const data = await response.json();
-                
-                if (response.ok) {
-                    alert('✅ Сообщение отправлено!');
-                } else {
-                    alert('❌ Ошибка отправки');
                 }
             } catch (error) {
                 console.error('Ошибка:', error);
@@ -633,6 +725,7 @@
                     alert('✅ Участница удалена');
                     loadStats();
                     loadMembers();
+                    loadBirthdays();
                 } else {
                     alert('❌ Ошибка');
                 }
@@ -656,11 +749,13 @@
         loadStats();
         loadSurveys();
         loadMembers();
+        loadBirthdays();
 
         setInterval(() => {
             loadStats();
             loadSurveys();
             loadMembers();
+            loadBirthdays();
         }, 5000);
     </script>
 </body>
