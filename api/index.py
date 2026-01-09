@@ -1,10 +1,10 @@
 import os
 import requests
 import random
+import sqlite3
 from flask import Flask, jsonify, request, render_template, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
-from supabase import create_client, Client
 import uuid
 from datetime import datetime
 
@@ -15,14 +15,12 @@ app = Flask(__name__, template_folder='templates', static_folder='templates')
 CORS(app)
 
 # Переменные окружения
-SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 BOT_TOKEN = os.getenv('BOT_TOKEN', '8500508012:AAEMuWXEsZsUfiDiOV50xFw928Tn7VUJRH8')
-ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'witches2026')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '-5015136189')
 
-# Supabase
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# SQLite БД
+DB_PATH = 'witch_club.db'
 
 # Список титулов с эмодзи
 TITLES = [
@@ -59,9 +57,48 @@ TITLES = [
 ]
 
 print(f"✅ BOT_TOKEN: {BOT_TOKEN[:20]}...")
-print(f"✅ SUPABASE_URL: {SUPABASE_URL}")
-print(f"✅ TELEGRAM_CHAT_ID: {TELEGRAM_CHAT_ID}")
+print(f"✅ DATABASE: {DB_PATH}")
 print(f"✅ Доступно титулов: {len(TITLES)}")
+
+# ==================== DATABASE ====================
+
+def init_db():
+    """Инициализация БД"""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    
+    # Таблица участниц
+    c.execute('''CREATE TABLE IF NOT EXISTS members (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        title TEXT DEFAULT 'Новая участница',
+        emoji TEXT DEFAULT '✨',
+        bio TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
+    
+    # Таблица анкет
+    c.execute('''CREATE TABLE IF NOT EXISTS surveys (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        birth_date TEXT,
+        telegram TEXT NOT NULL,
+        about TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
+    
+    conn.commit()
+    conn.close()
+    print("✅ БД инициализирована")
+
+def get_db():
+    """Получить подключение к БД"""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+init_db()
 
 # ==================== ФУНКЦИИ ====================
 
@@ -73,7 +110,7 @@ def send_telegram_message(username, message_text):
     """Отправить сообщение в групповой чат"""
     try:
         payload = {
-            'chat_id': TELEGRAM_CHAT_ID,  # Групповой чат
+            'chat_id': TELEGRAM_CHAT_ID,
             'text': f"<b>@{username}</b>\n\n{message_text}",
             'parse_mode': 'HTML',
             'disable_web_page_preview': True
@@ -86,7 +123,6 @@ def send_telegram_message(username, message_text):
         )
         
         print(f"📊 Telegram response: {response.status_code}")
-        print(f"📊 Telegram body: {response.text}")
         
         if response.ok:
             print(f"✅ Telegram: {username}")
@@ -127,55 +163,55 @@ def create_survey():
     """Создать новую анкету"""
     try:
         data = request.json
-        
         survey_id = str(uuid.uuid4())
         
-        response = supabase.table('surveys').insert({
-            'id': survey_id,
-            'name': data.get('name'),
-            'birth_date': data.get('birth_date'),
-            'telegram': data.get('telegram'),
-            'about': data.get('about'),
-            'status': 'pending',
-            'created_at': datetime.now().isoformat()
-        }).execute()
+        conn = get_db()
+        c = conn.cursor()
+        
+        c.execute('''INSERT INTO surveys (id, name, birth_date, telegram, about, status)
+                     VALUES (?, ?, ?, ?, ?, 'pending')''',
+                  (survey_id, data.get('name'), data.get('birth_date'), 
+                   data.get('telegram'), data.get('about')))
+        
+        conn.commit()
+        conn.close()
         
         print(f"✅ Анкета создана: {survey_id}")
         
         return jsonify({'status': 'success', 'id': survey_id}), 201
     except Exception as e:
-        print(f"❌ Ошибка создания анкеты: {str(e)}")
+        print(f"❌ Ошибка: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/surveys/<survey_id>/approve', methods=['POST'])
 def approve_survey(survey_id):
-    """Одобрить анкету и добавить в участницы"""
+    """Одобрить анкету"""
     try:
-        # Получить данные анкеты
-        survey = supabase.table('surveys').select('*').eq('id', survey_id).execute()
+        conn = get_db()
+        c = conn.cursor()
         
-        if not survey.data:
+        # Получить анкету
+        c.execute('SELECT * FROM surveys WHERE id = ?', (survey_id,))
+        survey = c.fetchone()
+        
+        if not survey:
             return jsonify({'error': 'Survey not found'}), 404
         
-        survey_data = survey.data[0]
-        
-        # Создать участницу с рандомным титулом
+        # Создать участницу
         member_id = str(uuid.uuid4())
         random_title = get_random_title()
         
-        supabase.table('members').insert({
-            'id': member_id,
-            'name': survey_data['name'],
-            'title': random_title,
-            'emoji': '✨',
-            'bio': '',
-            'created_at': datetime.now().isoformat()
-        }).execute()
+        c.execute('''INSERT INTO members (id, name, title, emoji, bio)
+                     VALUES (?, ?, ?, '✨', '')''',
+                  (member_id, survey['name'], random_title))
         
-        # Обновить статус анкеты
-        supabase.table('surveys').update({'status': 'approved'}).eq('id', survey_id).execute()
+        # Обновить статус
+        c.execute('UPDATE surveys SET status = ? WHERE id = ?', ('approved', survey_id))
         
-        # Отправить сообщение в Telegram
+        conn.commit()
+        conn.close()
+        
+        # Отправить в ТГ
         message = f"""🎉 <b>Поздравляем!</b>
 
 Ваша анкета одобрена! 🧙‍♀️✨
@@ -186,80 +222,104 @@ def approve_survey(survey_id):
 
 Ждём вас! 💜"""
         
-        send_telegram_message(survey_data['telegram'], message)
+        send_telegram_message(survey['telegram'], message)
         
-        print(f"✅ Анкета одобрена: {survey_id} -> Титул: {random_title}")
+        print(f"✅ Анкета одобрена: {survey_id} -> {random_title}")
         
         return jsonify({'status': 'success', 'title': random_title}), 200
     except Exception as e:
-        print(f"❌ Ошибка одобрения: {str(e)}")
+        print(f"❌ Ошибка: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/surveys/<survey_id>/reject', methods=['POST'])
 def reject_survey(survey_id):
     """Отклонить анкету"""
     try:
-        supabase.table('surveys').update({'status': 'rejected'}).eq('id', survey_id).execute()
+        conn = get_db()
+        c = conn.cursor()
+        
+        c.execute('UPDATE surveys SET status = ? WHERE id = ?', ('rejected', survey_id))
+        
+        conn.commit()
+        conn.close()
         
         print(f"✅ Анкета отклонена: {survey_id}")
         
         return jsonify({'status': 'success'}), 200
     except Exception as e:
-        print(f"❌ Ошибка отклонения: {str(e)}")
+        print(f"❌ Ошибка: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # ==================== API УЧАСТНИЦЫ ====================
 
 @app.route('/api/members', methods=['GET'])
 def get_members():
-    """Получить всех участниц"""
+    """Получить участниц"""
     try:
-        response = supabase.table('members').select('*').order('created_at', desc=True).execute()
+        conn = get_db()
+        c = conn.cursor()
         
-        print(f"✅ Загружено участниц: {len(response.data)}")
+        c.execute('SELECT * FROM members ORDER BY created_at DESC')
+        members = [dict(row) for row in c.fetchall()]
         
-        return jsonify({'members': response.data}), 200
+        conn.close()
+        
+        print(f"✅ Загружено: {len(members)}")
+        
+        return jsonify({'members': members}), 200
     except Exception as e:
-        print(f"❌ Ошибка загрузки участниц: {str(e)}")
+        print(f"❌ Ошибка: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/members/<member_id>', methods=['DELETE'])
 def delete_member(member_id):
     """Удалить участницу"""
     try:
-        supabase.table('members').delete().eq('id', member_id).execute()
+        conn = get_db()
+        c = conn.cursor()
         
-        print(f"✅ Участница удалена: {member_id}")
+        c.execute('DELETE FROM members WHERE id = ?', (member_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ Удалена: {member_id}")
         
         return jsonify({'status': 'success'}), 200
     except Exception as e:
-        print(f"❌ Ошибка удаления: {str(e)}")
+        print(f"❌ Ошибка: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/members/<member_id>/title', methods=['PUT'])
 def update_member_title(member_id):
-    """Изменить титул участницы"""
+    """Изменить титул"""
     try:
         data = request.json
         title = data.get('title')
         
         if not title:
-            return jsonify({'error': 'Title is required'}), 400
+            return jsonify({'error': 'Title required'}), 400
         
-        supabase.table('members').update({'title': title}).eq('id', member_id).execute()
+        conn = get_db()
+        c = conn.cursor()
         
-        print(f"✅ Титул обновлен: {member_id} -> {title}")
+        c.execute('UPDATE members SET title = ? WHERE id = ?', (title, member_id))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ Титул обновлен: {member_id}")
         
         return jsonify({'status': 'success'}), 200
     except Exception as e:
-        print(f"❌ Ошибка обновления титула: {str(e)}")
+        print(f"❌ Ошибка: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # ==================== ADMIN API ====================
 
 @app.route('/api/admin/login', methods=['POST'])
 def admin_login_api():
-    """Вход в админку"""
+    """Вход"""
     try:
         data = request.json
         password = data.get('password')
@@ -273,15 +333,24 @@ def admin_login_api():
 
 @app.route('/api/admin/stats', methods=['GET'])
 def admin_stats_api():
-    """Получить статистику"""
+    """Статистика"""
     try:
-        surveys = supabase.table('surveys').select('*').execute()
-        members = supabase.table('members').select('*').execute()
+        conn = get_db()
+        c = conn.cursor()
         
-        total_surveys = len(surveys.data)
-        pending = len([s for s in surveys.data if s['status'] == 'pending'])
-        approved = len([s for s in surveys.data if s['status'] == 'approved'])
-        total_members = len(members.data)
+        c.execute('SELECT COUNT(*) FROM surveys')
+        total_surveys = c.fetchone()[0]
+        
+        c.execute("SELECT COUNT(*) FROM surveys WHERE status = 'pending'")
+        pending = c.fetchone()[0]
+        
+        c.execute("SELECT COUNT(*) FROM surveys WHERE status = 'approved'")
+        approved = c.fetchone()[0]
+        
+        c.execute('SELECT COUNT(*) FROM members')
+        total_members = c.fetchone()[0]
+        
+        conn.close()
         
         return jsonify({
             'status': 'success',
@@ -293,27 +362,33 @@ def admin_stats_api():
             }
         }), 200
     except Exception as e:
-        print(f"❌ Ошибка статистики: {str(e)}")
+        print(f"❌ Ошибка: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admin/surveys/pending', methods=['GET'])
 def get_pending_surveys():
-    """Получить заявки в ожидании"""
+    """Заявки"""
     try:
-        response = supabase.table('surveys').select('*').eq('status', 'pending').order('created_at', desc=True).execute()
+        conn = get_db()
+        c = conn.cursor()
         
-        print(f"✅ Заявки в ожидании: {len(response.data)}")
+        c.execute("SELECT * FROM surveys WHERE status = 'pending' ORDER BY created_at DESC")
+        surveys = [dict(row) for row in c.fetchall()]
         
-        return jsonify({'surveys': response.data}), 200
+        conn.close()
+        
+        print(f"✅ Заявок: {len(surveys)}")
+        
+        return jsonify({'surveys': surveys}), 200
     except Exception as e:
-        print(f"❌ Ошибка загрузки заявок: {str(e)}")
+        print(f"❌ Ошибка: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-# ==================== ТЕСТОВАЯ ОТПРАВКА ====================
+# ==================== ТЕСТ ====================
 
 @app.route('/api/send-telegram-test/<username>', methods=['GET'])
 def send_telegram_test(username):
-    """Тестовая отправка сообщения в Telegram"""
+    """Тестовая отправка"""
     try:
         random_title = get_random_title()
         
@@ -330,15 +405,14 @@ def send_telegram_test(username):
         success = send_telegram_message(username, message)
         
         if success:
-            return jsonify({'status': 'success', 'message': f'✅ Сообщение отправлено', 'title': random_title}), 200
+            return jsonify({'status': 'success', 'title': random_title}), 200
         else:
-            return jsonify({'status': 'error', 'message': 'Ошибка отправки'}), 500
+            return jsonify({'status': 'error'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/health', methods=['GET'])
 def health():
-    """Health check"""
     return jsonify({'status': 'ok'}), 200
 
 # ==================== ЗАПУСК ====================
