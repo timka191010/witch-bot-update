@@ -619,4 +619,4 @@ if __name__ == '__main__':
         db.create_all()
         init_db_with_defaults()
     
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=False)
