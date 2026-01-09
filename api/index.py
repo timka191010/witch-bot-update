@@ -176,36 +176,22 @@ def get_template_path(filename):
 # ==================== STATIC ROUTES ====================
 
 @app.route('/')
-@app.route('/dashboard')
-def dashboard():
+def index():
+    """Главная страница с формой анкеты"""
     try:
-        template_path = get_template_path('admin_dashboard.html')
-        print(f"Loading dashboard from: {template_path}")
+        template_path = get_template_path('index.html')
         with open(template_path, 'r', encoding='utf-8') as f:
             return f.read()
     except Exception as e:
-        print(f"Error loading dashboard: {e}")
-        print(f"Tried path: {get_template_path('admin_dashboard.html')}")
-        return jsonify({'error': f'Dashboard not found: {str(e)}'}), 404
+        print(f"Error loading index: {e}")
+        return jsonify({'error': f'Index not found: {str(e)}'}), 404
 
 
-@app.route('/stats')
-def stats_page():
-    try:
-        template_path = get_template_path('admin_stats.html')
-        print(f"Loading stats from: {template_path}")
-        with open(template_path, 'r', encoding='utf-8') as f:
-            return f.read()
-    except Exception as e:
-        print(f"Error loading stats: {e}")
-        return jsonify({'error': f'Stats page not found: {str(e)}'}), 404
-
-
-@app.route('/login')
-def login_page():
+@app.route('/admin')
+def admin_login():
+    """Страница входа в админку"""
     try:
         template_path = get_template_path('admin_login.html')
-        print(f"Loading login from: {template_path}")
         with open(template_path, 'r', encoding='utf-8') as f:
             return f.read()
     except Exception as e:
@@ -213,10 +199,35 @@ def login_page():
         return jsonify({'error': f'Login page not found: {str(e)}'}), 404
 
 
+@app.route('/dashboard')
+def dashboard():
+    """Админ панель с анкетами"""
+    try:
+        template_path = get_template_path('admin_dashboard.html')
+        with open(template_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except Exception as e:
+        print(f"Error loading dashboard: {e}")
+        return jsonify({'error': f'Dashboard not found: {str(e)}'}), 404
+
+
+@app.route('/stats')
+def stats_page():
+    """Страница со статистикой"""
+    try:
+        template_path = get_template_path('admin_stats.html')
+        with open(template_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except Exception as e:
+        print(f"Error loading stats: {e}")
+        return jsonify({'error': f'Stats page not found: {str(e)}'}), 404
+
+
 # ==================== API - SURVEYS ====================
 
 @app.route('/api/surveys', methods=['POST'])
 def create_survey():
+    """Создать анкету - потом редирект на /dashboard"""
     try:
         data = request.get_json()
         
@@ -237,7 +248,7 @@ def create_survey():
         db.session.add(survey)
         db.session.commit()
         
-        return jsonify({'status': 'success', 'survey': survey.to_dict()}), 201
+        return jsonify({'status': 'success', 'survey': survey.to_dict(), 'redirect': '/dashboard'}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -356,6 +367,7 @@ def get_member(member_id):
 
 @app.route('/api/members/<int:member_id>/update', methods=['POST'])
 def update_member(member_id):
+    """Изменить титул участницы"""
     try:
         member = Member.query.get(member_id)
         if not member:
@@ -469,6 +481,7 @@ def admin_all_members():
 
 @app.route('/api/admin/titles', methods=['GET'])
 def admin_titles():
+    """Получить все доступные титулы для выбора"""
     try:
         return jsonify({'status': 'success', 'titles': TITLES}), 200
     except Exception as e:
