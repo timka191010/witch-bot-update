@@ -22,6 +22,7 @@ CORS(app)
 
 BOT_TOKEN = '8500508012:AAEMuWXEsZsUfiDiOV50xFw928Tn7VUJRH8'
 CHAT_LINK = 'https://t.me/+S32BT0FT6w0xYTBi'
+ADMIN_PASSWORD = 'witches2026'  # ← ИЗМЕНИ НА СВОЙ ПАРОЛЬ!
 
 # ==================== MODELS ====================
 
@@ -171,6 +172,23 @@ def get_template_path(filename):
     
     # Если ничего не найдено - вернуть первый вариант
     return path1
+
+
+# ==================== API - AUTH ====================
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    """Проверка пароля админки"""
+    try:
+        data = request.get_json()
+        password = data.get('password', '')
+        
+        if password == ADMIN_PASSWORD:
+            return jsonify({'status': 'success', 'redirect': '/dashboard'}), 200
+        else:
+            return jsonify({'error': 'Неверный пароль'}), 401
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 # ==================== STATIC ROUTES ====================
