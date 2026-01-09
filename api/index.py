@@ -17,7 +17,6 @@ CORS(app)
 # Переменные окружения
 BOT_TOKEN = os.getenv('BOT_TOKEN', '8500508012:AAEMuWXEsZsUfiDiOV50xFw928Tn7VUJRH8')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'witches2026')
-TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '-5015136189')
 
 # SQLite БД
 DB_PATH = 'witch_club.db'
@@ -107,11 +106,11 @@ def get_random_title():
     return random.choice(TITLES)
 
 def send_telegram_message(username, message_text):
-    """Отправить сообщение в групповой чат"""
+    """Отправить сообщение в ЛС"""
     try:
         payload = {
-            'chat_id': TELEGRAM_CHAT_ID,
-            'text': f"<b>@{username}</b>\n\n{message_text}",
+            'chat_id': username,
+            'text': message_text,
             'parse_mode': 'HTML',
             'disable_web_page_preview': True
         }
@@ -122,13 +121,14 @@ def send_telegram_message(username, message_text):
             timeout=10
         )
         
-        print(f"📊 Telegram response: {response.status_code}")
+        print(f"📊 Telegram: {response.status_code}")
+        print(f"📊 Response: {response.text}")
         
         if response.ok:
-            print(f"✅ Telegram: {username}")
+            print(f"✅ ЛС отправлено: {username}")
             return True
         else:
-            print(f"❌ Telegram error: {response.text}")
+            print(f"❌ Ошибка: {response.text}")
             return False
     except Exception as e:
         print(f"❌ Ошибка отправки: {str(e)}")
@@ -211,7 +211,7 @@ def approve_survey(survey_id):
         conn.commit()
         conn.close()
         
-        # Отправить в ТГ
+        # Отправить в ТГ ЛС
         message = f"""🎉 <b>Поздравляем!</b>
 
 Ваша анкета одобрена! 🧙‍♀️✨
@@ -421,7 +421,7 @@ def setup_add_members():
 
 @app.route('/api/send-telegram-test/<username>', methods=['GET'])
 def send_telegram_test(username):
-    """Тестовая отправка"""
+    """Тестовая отправка в ЛС"""
     try:
         random_title = get_random_title()
         
@@ -440,7 +440,7 @@ def send_telegram_test(username):
         if success:
             return jsonify({'status': 'success', 'title': random_title}), 200
         else:
-            return jsonify({'status': 'error'}), 500
+            return jsonify({'status': 'error', 'message': 'Failed to send'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
