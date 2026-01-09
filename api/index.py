@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template_string
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
@@ -7,7 +7,7 @@ import random
 import requests
 from sqlalchemy import func
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 
 # ==================== CONFIG ====================
 
@@ -148,6 +148,36 @@ def send_telegram_message(username, message_text):
     except Exception as e:
         print(f"❌ Ошибка: {str(e)}")
         return False
+
+
+# ==================== STATIC ROUTES ====================
+
+@app.route('/')
+@app.route('/dashboard')
+def dashboard():
+    try:
+        with open('templates/admin_dashboard.html', 'r', encoding='utf-8') as f:
+            return f.read()
+    except:
+        return jsonify({'error': 'Dashboard not found'}), 404
+
+
+@app.route('/stats')
+def stats_page():
+    try:
+        with open('templates/admin_stats.html', 'r', encoding='utf-8') as f:
+            return f.read()
+    except:
+        return jsonify({'error': 'Stats page not found'}), 404
+
+
+@app.route('/login')
+def login_page():
+    try:
+        with open('templates/admin_login.html', 'r', encoding='utf-8') as f:
+            return f.read()
+    except:
+        return jsonify({'error': 'Login page not found'}), 404
 
 
 # ==================== API - SURVEYS ====================
