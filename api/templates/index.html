@@ -1,6 +1,3 @@
-
-
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -446,11 +443,15 @@
     </footer>
 
     <script>
-        // Загрузить участниц
+        // ✅ Загрузить участниц
         async function loadMembers() {
             try {
                 const response = await fetch('/api/members');
-                const members = await response.json();
+                const data = await response.json();
+                
+                console.log('📊 API Response:', data);
+                
+                const members = data.members || [];
                 
                 const container = document.getElementById('membersContainer');
                 
@@ -458,6 +459,8 @@
                     container.innerHTML = '<div style="text-align: center; color: #aaa; grid-column: 1 / -1;">Участниц пока нет</div>';
                     return;
                 }
+                
+                console.log(`✅ Загружено ${members.length} участниц`);
                 
                 container.innerHTML = members.map(member => `
                     <div class="member-card">
@@ -468,7 +471,8 @@
                     </div>
                 `).join('');
             } catch (error) {
-                console.error('Ошибка загрузки участниц:', error);
+                console.error('❌ Ошибка загрузки участниц:', error);
+                document.getElementById('membersContainer').innerHTML = '<div style="text-align: center; color: #FF6B6B; grid-column: 1 / -1;">Ошибка загрузки 😢</div>';
             }
         }
 
@@ -495,7 +499,7 @@
             formSection.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Отправить анкету
+        // ✅ Отправить анкету
         document.getElementById('surveyForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -508,18 +512,12 @@
 
             const data = {
                 name: document.getElementById('name').value.trim(),
-                birthDate: document.getElementById('birthDate').value,
+                birth_date: document.getElementById('birthDate').value,
                 telegram: document.getElementById('telegram').value.trim().replace('@', ''),
-                maritalStatus: document.getElementById('maritalStatus').value,
-                children: document.getElementById('children').value.trim(),
-                hobbies: document.getElementById('hobbies').value.trim(),
-                topics: document.getElementById('topics').value.trim(),
-                goal: document.getElementById('goal').value.trim(),
-                source: document.getElementById('source').value.trim(),
-                agreement: document.getElementById('agreement').checked
+                about: `Хобби: ${document.getElementById('hobbies').value.trim()}\n\nТемы: ${document.getElementById('topics').value.trim()}\n\nЦель: ${document.getElementById('goal').value.trim()}\n\nОткуда узнала: ${document.getElementById('source').value.trim()}`
             };
 
-            if (!data.name || !data.birthDate || !data.telegram || !data.maritalStatus || !data.hobbies || !data.topics || !data.goal || !data.source || !data.agreement) {
+            if (!data.name || !data.birth_date || !data.telegram || !data.about) {
                 errorMsg.textContent = '❌ Заполните все обязательные поля!';
                 errorMsg.style.display = 'block';
                 return;
@@ -529,7 +527,7 @@
             submitBtn.textContent = '⏳ Отправляю...';
 
             try {
-                const response = await fetch('/api/members', {
+                const response = await fetch('/api/surveys', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -547,7 +545,7 @@
                         toggleForm();
                     }, 2000);
                 } else {
-                    errorMsg.textContent = '❌ Ошибка: ' + (result.message || 'Попробуйте снова');
+                    errorMsg.textContent = '❌ Ошибка: ' + (result.error || 'Попробуйте снова');
                     errorMsg.style.display = 'block';
                 }
             } catch (error) {
