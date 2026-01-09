@@ -1,5 +1,5 @@
 import random
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
@@ -129,6 +129,11 @@ def admin_login():
             return jsonify({'status': 'error', 'message': 'Неверный пароль'}), 401
     
     return render_template('admin_login.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    """Admin logout"""
+    return redirect('/admin/login')
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
