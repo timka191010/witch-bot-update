@@ -1,28 +1,16 @@
-import os
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-import requests
-from functools import wraps
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = 'witch-secret-2026'
 
-# Database
+# Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///witch_club.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Telegram config
-TELEGRAM_BOT_TOKEN = '8500508012:AAEMuWXEsZsUfiDiOV50xFw928Tn7VUJRH8'
-TELEGRAM_CHAT_ID = '-5015136189'
-CHAT_LINK = 'https://t.me/+S32BT0FT6w0xYTBi'
-
-# Admin credentials
-ADMIN_USERNAME = 'admin'
-ADMIN_PASSWORD = 'witch2026'
-
-# Models
+# ===== DATABASE MODELS =====
 class Survey(db.Model):
     __tablename__ = 'surveys'
     id = db.Column(db.Integer, primary_key=True)
@@ -36,7 +24,6 @@ class Survey(db.Model):
     goal = db.Column(db.Text)
     source = db.Column(db.String(150))
     agreement = db.Column(db.Boolean, default=False)
-    approved = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Member(db.Model):
@@ -46,92 +33,64 @@ class Member(db.Model):
     title = db.Column(db.String(200))
     emoji = db.Column(db.String(10), default='🧙‍♀️')
     bio = db.Column(db.Text)
-    birth_date = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Create tables
+# Create database tables
 with app.app_context():
     db.create_all()
 
-# Helper functions
-def send_telegram_message(telegram_username, user_name):
-    """Отправить ссылку на чат в Telegram"""
-    if not TELEGRAM_BOT_TOKEN:
-        print("⚠️ TELEGRAM_BOT_TOKEN не установлен!")
-        return False
-    
-    try:
-        message = f"""
-🎉 **ДОБРО ПОЖАЛОВАТЬ В КЛУБ!** 🎉
+# ===== ROUTES =====
 
-✨ {user_name}, ваша анкета одобрена!
-
-📝 Ваш Telegram: @{telegram_username}
-
-Присоединяйтесь к нам в чате:
-{CHAT_LINK}
-
-С любовью,
-Клуб ведьм "Ведьмы не стареют" 🧙‍♀️
-        """
-        
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        data = {
-            "chat_id": f"@{telegram_username}",
-            "text": message,
-            "parse_mode": "Markdown"
-        }
-        
-        response = requests.post(url, data=data, timeout=5)
-        return response.status_code == 200
-    except Exception as e:
-        print(f"❌ Ошибка отправки Telegram: {str(e)}")
-        return False
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'admin_logged_in' not in session:
-            return redirect(url_for('admin_login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-# Public Routes
 @app.route('/')
 def index():
+    """Main page"""
     return render_template('index.html')
 
 @app.route('/api/members', methods=['GET'])
 def get_members():
+    """Get all members"""
     try:
         members = Member.query.all()
-        return jsonify([{
-            'id': m.id,
-            'name': m.name,
-            'title': m.title,
-            'emoji': m.emoji,
-            'bio': m.bio
-        } for m in members])
+        members_data = []
+        for m in members:
+            members_data.append({
+                'id': m.id,
+                'name': m.name,
+                'title': m.title,
+                'emoji': m.emoji,
+                'bio': m.bio
+            })
+        return jsonify(members_data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/submit-survey', methods=['POST'])
 def submit_survey():
+    """Submit survey form"""
     try:
         data = request.json
         
+        # Validate required fields
+        required_fields = ['name', 'telegram', 'birthDate', 'maritalStatus', 'hobbies', 'topics', 'goal', 'source', 'agreement']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Missing field: {field}'
+                }), 400
+        
+        # Create survey record
         survey = Survey(
-            name=data.get('name', ''),
-            birth_date=data.get('birthDate', ''),
-            telegram=data.get('telegram', ''),
-            marital_status=data.get('maritalStatus', ''),
-            children=data.get('children', ''),
-            hobbies=data.get('hobbies', ''),
-            topics=data.get('topics', ''),
-            goal=data.get('goal', ''),
-            source=data.get('source', ''),
-            agreement=data.get('agreement', False),
-            approved=False
+            name=data.get('name', '').strip(),
+            birth_date=data.get('birthDate', '').strip(),
+            telegram=data.get('telegram', '').strip().replace('@', ''),
+            marital_status=data.get('maritalStatus', '').strip(),
+            children=data.get('children', '').strip(),
+            hobbies=data.get('hobbies', '').strip(),
+            topics=data.get('topics', '').strip(),
+            goal=data.get('goal', '').strip(),
+            source=data.get('source', '').strip(),
+            agreement=data.get('agreement', False)
         )
         
         db.session.add(survey)
@@ -139,111 +98,25 @@ def submit_survey():
         
         return jsonify({
             'status': 'success',
-            'message': 'Анкета успешно отправлена! Ожидайте одобрения.'
+            'message': 'Анкета успешно отправлена! Ожидайте одобрения.',
+            'survey_id': survey.id
         }), 200
         
     except Exception as e:
         db.session.rollback()
         return jsonify({
             'status': 'error',
-            'message': f'Ошибка: {str(e)}'
-        }), 400
+            'message': f'Error: {str(e)}'
+        }), 500
 
-# Admin Routes
-@app.route('/admin/login', methods=['GET', 'POST'])
-def admin_login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        
-        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-            session['admin_logged_in'] = True
-            return redirect(url_for('admin_dashboard'))
-        else:
-            return render_template('admin_login.html', error='Неверные учетные данные'), 401
-    
-    return render_template('admin_login.html')
+# Error handlers
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Not Found'}), 404
 
-@app.route('/admin/logout')
-def admin_logout():
-    session.pop('admin_logged_in', None)
-    return redirect(url_for('admin_login'))
-
-@app.route('/admin/dashboard')
-@login_required
-def admin_dashboard():
-    surveys = Survey.query.order_by(Survey.created_at.desc()).all()
-    stats = {
-        'total': len(surveys),
-        'approved': len([s for s in surveys if s.approved]),
-        'pending': len([s for s in surveys if not s.approved])
-    }
-    return render_template('admin_dashboard.html', surveys=surveys, stats=stats)
-
-@app.route('/api/admin/approve/<int:survey_id>', methods=['POST'])
-@login_required
-def approve_survey(survey_id):
-    try:
-        survey = Survey.query.get(survey_id)
-        if not survey:
-            return jsonify({'error': 'Анкета не найдена'}), 404
-        
-        survey.approved = True
-        db.session.commit()
-        
-        # Создать участницу
-        member = Member(
-            name=survey.name,
-            title=f"Ведьма {survey.hobbies.split()[0] if survey.hobbies else ''}",
-            emoji='🧙‍♀️',
-            bio=survey.hobbies[:100] if survey.hobbies else '',
-            birth_date=survey.birth_date
-        )
-        db.session.add(member)
-        db.session.commit()
-        
-        # Отправить в Telegram
-        send_telegram_message(survey.telegram, survey.name)
-        
-        return jsonify({
-            'status': 'success',
-            'message': 'Анкета одобрена! Ссылка отправлена в Telegram.'
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 400
-
-@app.route('/api/admin/reject/<int:survey_id>', methods=['POST'])
-@login_required
-def reject_survey(survey_id):
-    try:
-        survey = Survey.query.get(survey_id)
-        if not survey:
-            return jsonify({'error': 'Анкета не найдена'}), 404
-        
-        db.session.delete(survey)
-        db.session.commit()
-        
-        return jsonify({
-            'status': 'success',
-            'message': 'Анкета отклонена.'
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 400
-
-@app.route('/api/admin/stats')
-@login_required
-def get_stats():
-    surveys = Survey.query.all()
-    stats = {
-        'total': len(surveys),
-        'approved': len([s for s in surveys if s.approved]),
-        'pending': len([s for s in surveys if not s.approved])
-    }
-    return jsonify(stats)
+@app.errorhandler(500)
+def server_error(error):
+    return jsonify({'error': 'Server Error'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=False, host='0.0.0.0', port=8080)
