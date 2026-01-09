@@ -386,7 +386,7 @@ def get_pending_surveys():
 
 # ==================== SETUP ====================
 
-@app.route('/setup/add-members', methods=['POST'])
+@app.route('/setup/add-members', methods=['GET', 'POST'])
 def setup_add_members():
     """Добавить участниц"""
     try:
