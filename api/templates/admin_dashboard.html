@@ -434,7 +434,6 @@
                 document.getElementById('approvedSurveys').textContent = data.stats.approved_surveys;
                 document.getElementById('totalMembers').textContent = data.stats.total_members;
 
-                // Обновляем modal если он открыт
                 updateStatsModal();
             } catch (error) {
                 console.error('Ошибка загрузки статистики:', error);
@@ -447,7 +446,6 @@
             document.getElementById('modalApprovedSurveys').textContent = currentStats.approved_surveys;
             document.getElementById('modalTotalMembers').textContent = currentStats.total_members;
             
-            // Процент одобрения
             const approvalRate = currentStats.total_surveys > 0 
                 ? Math.round((currentStats.approved_surveys / currentStats.total_surveys) * 100)
                 : 0;
@@ -649,7 +647,6 @@
             window.location.href = '/admin/login';
         }
 
-        // Закрывай modal при клике за границами
         document.getElementById('statsModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeStatsModal();
