@@ -64,7 +64,8 @@ def get_members():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Error handlers
+# ===== ERROR HANDLERS =====
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Not Found'}), 404
@@ -74,4 +75,4 @@ def server_error(error):
     return jsonify({'error': 'Server Error'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port 8080)
+    app.run(debug=False, host='0.0.0.0', port=8080)
