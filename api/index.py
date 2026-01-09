@@ -46,23 +46,67 @@ def index():
     """Main page"""
     return render_template('index.html')
 
-@app.route('/api/members', methods=['GET'])
-def get_members():
-    """Get all members"""
-    try:
-        members = Member.query.all()
-        members_data = []
-        for m in members:
-            members_data.append({
-                'id': m.id,
-                'name': m.name,
-                'title': m.title,
-                'emoji': m.emoji,
-                'bio': m.bio
-            })
-        return jsonify(members_data), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+@app.route('/api/members', methods=['GET', 'POST', 'OPTIONS'])
+def handle_members():
+    """Get all members or add new member"""
+    
+    # CORS preflight
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    # GET - Получить всех участниц
+    if request.method == 'GET':
+        try:
+            members = Member.query.all()
+            members_data = []
+            for m in members:
+                members_data.append({
+                    'id': m.id,
+                    'name': m.name,
+                    'title': m.title,
+                    'emoji': m.emoji,
+                    'bio': m.bio
+                })
+            return jsonify(members_data), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    # POST - Добавить новую анкету и участницу
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            
+            # Сохраняем в Survey
+            survey = Survey(
+                name=data.get('name'),
+                birth_date=data.get('birthDate'),
+                telegram=data.get('telegram'),
+                marital_status=data.get('maritalStatus'),
+                children=data.get('children'),
+                hobbies=data.get('hobbies'),
+                topics=data.get('topics'),
+                goal=data.get('goal'),
+                source=data.get('source'),
+                agreement=data.get('agreement', False)
+            )
+            db.session.add(survey)
+            db.session.commit()
+            
+            # Добавляем в Members
+            member = Member(
+                name=data.get('name'),
+                title='Новая участница',
+                emoji='🧙‍♀️',
+                bio=data.get('hobbies', '')[:100]
+            )
+            db.session.add(member)
+            db.session.commit()
+            
+            return jsonify({'status': 'success', 'message': 'Анкета добавлена'}), 200
+        
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)}), 400
 
 # ===== ERROR HANDLERS =====
 
