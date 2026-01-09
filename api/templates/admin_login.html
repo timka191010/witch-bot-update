@@ -125,14 +125,12 @@
     <div class="login-box">
         <h1>🧙‍♀️ Админка</h1>
         
-        {% if error %}
-        <div class="error show">{{ error }}</div>
-        {% endif %}
+        <div class="error" id="errorMsg"></div>
 
-        <form method="POST">
+        <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
                 <label for="password">Пароль</label>
-                <input type="password" id="password" name="password" placeholder="Введите пароль" required autofocus>
+                <input type="password" id="password" placeholder="Введите пароль" required autofocus>
             </div>
 
             <button type="submit">Войти</button>
@@ -142,5 +140,35 @@
             Панель администратора клуба
         </div>
     </div>
+
+    <script>
+        function handleLogin(e) {
+            e.preventDefault();
+            const pwd = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            fetch('/admin/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ password: pwd })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    localStorage.setItem('admin_logged_in', 'true');
+                    window.location.href = '/admin/dashboard';
+                } else {
+                    errorMsg.textContent = '❌ ' + (data.message || 'Неверный пароль');
+                    errorMsg.classList.add('show');
+                }
+            })
+            .catch(err => {
+                errorMsg.textContent = '❌ Ошибка: ' + err.message;
+                errorMsg.classList.add('show');
+            });
+        }
+    </script>
 </body>
 </html>
