@@ -11,12 +11,16 @@ app = Flask(__name__, template_folder='templates')
 
 # ==================== CONFIG ====================
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///witch_club.db'
+# Абсолютный путь для БД
+DB_PATH = os.path.join(os.path.dirname(__file__), 'witch_club.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_AS_ASCII'] = False
 
 db = SQLAlchemy(app)
 CORS(app)
+
+print(f"📊 БД путь: {DB_PATH}")
 
 # ==================== TELEGRAM ====================
 
@@ -565,9 +569,10 @@ def load_default_members():
 def init_db_with_defaults():
     """Инициализировать БД с 8 дефолтными участницами"""
     try:
-        if Member.query.count() > 0:
-            print("✅ БД уже инициализирована")
-            return
+        # Всегда чистим и создаём заново
+        Member.query.delete()
+        Survey.query.delete()
+        db.session.commit()
         
         default_members = [
             {'name': 'Мария Зуева', 'title': '🌌 Верховная Ведьма', 'emoji': '🔮'},
