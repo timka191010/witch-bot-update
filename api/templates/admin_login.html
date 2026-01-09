@@ -1,3 +1,6 @@
+
+
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -206,13 +209,6 @@
     </div>
 
     <script>
-        // Проверка авторизации
-        window.addEventListener('load', () => {
-            if (localStorage.getItem('admin_logged_in') === 'true') {
-                window.location.href = '/admin/dashboard';
-            }
-        });
-
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -221,36 +217,30 @@
             const successMsg = document.getElementById('successMsg');
             const submitBtn = document.getElementById('submitBtn');
             
-            // Очистить предыдущие сообщения
             errorMsg.classList.remove('show');
             successMsg.classList.remove('show');
             
-            // Деактивировать кнопку
             submitBtn.disabled = true;
             submitBtn.textContent = '⏳ Проверяю...';
 
             try {
-                const response = await fetch('/api/admin/login', {
+                const formData = new FormData();
+                formData.append('password', password);
+                
+                const response = await fetch('/admin/login', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ password })
+                    body: formData
                 });
 
-                const data = await response.json();
-
-                if (data.status === 'success') {
+                if (response.ok || response.status === 302) {
                     successMsg.textContent = '✅ Вход выполнен! Переход...';
                     successMsg.classList.add('show');
-                    localStorage.setItem('admin_logged_in', 'true');
                     
                     setTimeout(() => {
                         window.location.href = '/admin/dashboard';
                     }, 500);
                 } else {
-                    errorMsg.textContent = '❌ ' + (data.error || 'Неверный пароль');
+                    errorMsg.textContent = '❌ Неверный пароль';
                     errorMsg.classList.add('show');
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Войти';
@@ -266,7 +256,6 @@
             }
         });
 
-        // Очистка ошибки при вводе
         document.getElementById('password').addEventListener('input', () => {
             document.getElementById('errorMsg').classList.remove('show');
         });
