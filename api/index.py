@@ -108,6 +108,42 @@ def handle_members():
             db.session.rollback()
             return jsonify({'status': 'error', 'message': str(e)}), 400
 
+# ===== ADMIN ROUTES =====
+
+@app.route('/admin/login')
+def admin_login():
+    """Admin login page"""
+    return render_template('admin_login.html')
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    """Admin dashboard"""
+    return render_template('admin_dashboard.html')
+
+@app.route('/admin/stats')
+def admin_stats():
+    """Admin stats"""
+    return render_template('admin_stats.html')
+
+@app.route('/api/surveys', methods=['GET'])
+def get_surveys():
+    """Get all surveys"""
+    try:
+        surveys = Survey.query.all()
+        surveys_data = []
+        for s in surveys:
+            surveys_data.append({
+                'id': s.id,
+                'name': s.name,
+                'telegram': s.telegram,
+                'birth_date': s.birth_date,
+                'marital_status': s.marital_status,
+                'created_at': s.created_at.isoformat() if s.created_at else None
+            })
+        return jsonify(surveys_data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ===== ERROR HANDLERS =====
 
 @app.errorhandler(404)
