@@ -152,8 +152,25 @@ def send_telegram_message(username, message_text):
 
 # ==================== PATH SETUP ====================
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TEMPLATES_DIR = os.path.join(os.path.dirname(BASE_DIR), 'templates')
+def get_template_path(filename):
+    """Получить правильный путь к файлу шаблона"""
+    # Вариант 1: относительный путь от api/
+    path1 = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates', filename))
+    if os.path.exists(path1):
+        return path1
+    
+    # Вариант 2: если templates в той же папке
+    path2 = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates', filename))
+    if os.path.exists(path2):
+        return path2
+    
+    # Вариант 3: абсолютный путь на Render
+    path3 = f'/opt/render/project/src/templates/{filename}'
+    if os.path.exists(path3):
+        return path3
+    
+    # Если ничего не найдено - вернуть первый вариант
+    return path1
 
 
 # ==================== STATIC ROUTES ====================
@@ -162,19 +179,21 @@ TEMPLATES_DIR = os.path.join(os.path.dirname(BASE_DIR), 'templates')
 @app.route('/dashboard')
 def dashboard():
     try:
-        template_path = os.path.join(TEMPLATES_DIR, 'admin_dashboard.html')
+        template_path = get_template_path('admin_dashboard.html')
+        print(f"Loading dashboard from: {template_path}")
         with open(template_path, 'r', encoding='utf-8') as f:
             return f.read()
     except Exception as e:
         print(f"Error loading dashboard: {e}")
-        print(f"Looking for: {template_path}")
+        print(f"Tried path: {get_template_path('admin_dashboard.html')}")
         return jsonify({'error': f'Dashboard not found: {str(e)}'}), 404
 
 
 @app.route('/stats')
 def stats_page():
     try:
-        template_path = os.path.join(TEMPLATES_DIR, 'admin_stats.html')
+        template_path = get_template_path('admin_stats.html')
+        print(f"Loading stats from: {template_path}")
         with open(template_path, 'r', encoding='utf-8') as f:
             return f.read()
     except Exception as e:
@@ -185,7 +204,8 @@ def stats_page():
 @app.route('/login')
 def login_page():
     try:
-        template_path = os.path.join(TEMPLATES_DIR, 'admin_login.html')
+        template_path = get_template_path('admin_login.html')
+        print(f"Loading login from: {template_path}")
         with open(template_path, 'r', encoding='utf-8') as f:
             return f.read()
     except Exception as e:
@@ -468,4 +488,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=False)
