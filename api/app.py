@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-app = Flask(__name__, template_folder='api/templates')
+app = Flask(__name__, template_folder='templates')
 CORS(app)
 
 app.config['JSON_AS_ASCII'] = False
