@@ -11,7 +11,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///witch_club.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Рандомные титулы
+# Рандомные титулы для новых участниц
 TITLES = [
     'Ведьма знаний 📚',
     'Королева магии ✨',
@@ -23,6 +23,18 @@ TITLES = [
     'Повелительница стихий 🔥',
     'Звёздная ведьма ⭐',
     'Королевна тьмы 🖤'
+]
+
+# 8 основных ведьм
+DEFAULT_MEMBERS = [
+    {'name': 'Мария Зуева', 'title': '👑 Верховная Ведьма', 'emoji': '🔮', 'bio': ''},
+    {'name': 'Елена Клыкова', 'title': '🌿 Ведьма Трав и Эликсиров', 'emoji': '🌿', 'bio': ''},
+    {'name': 'Елена Пустовит', 'title': '💎 Ведьма Кристаллов', 'emoji': '💎', 'bio': ''},
+    {'name': 'Елена Провосуд', 'title': '⚡ Ведьма Грозовых Ветров', 'emoji': '⚡', 'bio': ''},
+    {'name': 'Юлия Пиндюрина', 'title': '⭐ Ведьма Звёздного Пути', 'emoji': '⭐', 'bio': ''},
+    {'name': 'Наталья Гудкова', 'title': '🔥 Ведьма Огненного Круга', 'emoji': '🔥', 'bio': ''},
+    {'name': 'Екатерина Когай', 'title': '🌙 Ведьма Лунного Света', 'emoji': '🌙', 'bio': ''},
+    {'name': 'Анна Моисеева', 'title': '✨ Ведьма Магии', 'emoji': '✨', 'bio': ''},
 ]
 
 # ===== DATABASE MODELS =====
@@ -208,6 +220,44 @@ def reject_survey(survey_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/members/<int:member_id>/delete', methods=['POST'])
+def delete_member(member_id):
+    """Удалить участницу"""
+    try:
+        member = Member.query.get(member_id)
+        if not member:
+            return jsonify({'error': 'Участница не найдена'}), 404
+        db.session.delete(member)
+        db.session.commit()
+        return jsonify({'status': 'success'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/load-default-members', methods=['POST'])
+def load_default_members():
+    """Загрузить 8 основных ведьм"""
+    try:
+        count = 0
+        for member_data in DEFAULT_MEMBERS:
+            # Проверяем, не существует ли уже
+            existing = Member.query.filter_by(name=member_data['name']).first()
+            if not existing:
+                member = Member(
+                    name=member_data['name'],
+                    title=member_data['title'],
+                    emoji=member_data['emoji'],
+                    bio=member_data['bio']
+                )
+                db.session.add(member)
+                count += 1
+        
+        db.session.commit()
+        return jsonify({'status': 'success', 'count': count}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # ===== ERROR HANDLERS =====
 
