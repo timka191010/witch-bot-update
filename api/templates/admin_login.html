@@ -127,7 +127,7 @@
         
         <div class="error" id="errorMsg"></div>
 
-        <form id="loginForm" onsubmit="handleLogin(event)">
+        <form id="loginForm">
             <div class="form-group">
                 <label for="password">Пароль</label>
                 <input type="password" id="password" placeholder="Введите пароль" required autofocus>
@@ -142,33 +142,32 @@
     </div>
 
     <script>
-        function handleLogin(e) {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const pwd = document.getElementById('password').value;
+            const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
 
-            fetch('/admin/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ password: pwd })
-            })
-            .then(r => r.json())
-            .then(data => {
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+
                 if (data.status === 'success') {
                     localStorage.setItem('admin_logged_in', 'true');
-                    window.location.href = '/admin/dashboard';
+                    window.location.href = '/dashboard';
                 } else {
-                    errorMsg.textContent = '❌ ' + (data.message || 'Неверный пароль');
+                    errorMsg.textContent = '❌ ' + (data.error || 'Неверный пароль');
                     errorMsg.classList.add('show');
                 }
-            })
-            .catch(err => {
-                errorMsg.textContent = '❌ Ошибка: ' + err.message;
+            } catch (error) {
+                errorMsg.textContent = '❌ Ошибка: ' + error.message;
                 errorMsg.classList.add('show');
-            });
-        }
+            }
+        });
     </script>
 </body>
 </html>
