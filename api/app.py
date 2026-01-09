@@ -1,303 +1,289 @@
-from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
-import json
+
+Full Flask App
+
+
+# Full app.py for Witch Club
+
 import os
+import json
 from datetime import datetime
-from pathlib import Path
+from flask import Flask, render_template, request, jsonify, session, redirect
+from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+from dotenv import load_dotenv
+import psycopg2
+
+load_dotenv()
 
 app = Flask(__name__, template_folder='templates')
 CORS(app)
 
-app.config['JSON_AS_ASCII'] = False
+# ==================== CONFIG ====================
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///witch_club.db')
 
-# Папки
-DATA_DIR = Path('data')
-DATA_DIR.mkdir(exist_ok=True)
-SURVEYS_FILE = DATA_DIR / 'surveys.json'
+# Если это PostgreSQL от Render, преобразуем URL
+if DATABASE_URL and DATABASE_URL.startswith('postgresql://'):
+    DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg2://', 1)
 
-def load_surveys():
-    if SURVEYS_FILE.exists():
-        with open(SURVEYS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return []
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-def save_surveys(surveys):
-    with open(SURVEYS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(surveys, f, ensure_ascii=False, indent=2)
+db = SQLAlchemy(app)
 
-# === ГЛАВНАЯ СТРАНИЦА ===
+# ==================== MODELS ====================
+class Member(db.Model):
+    __tablename__ = 'members'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), unique=True, nullable=False)
+    emoji = db.Column(db.String(10), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    birth_date = db.Column(db.Date, nullable=True)
+    about = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'emoji': self.emoji,
+            'title': self.title,
+            'birth_date': self.birth_date.strftime('%d.%m.%Y') if self.birth_date else None,
+            'bio': self.about
+        }
+
+class Survey(db.Model):
+    __tablename__ = 'surveys'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    birth_date = db.Column(db.Date, nullable=True)
+    telegram = db.Column(db.String(255), nullable=False)
+    marital_status = db.Column(db.String(100), nullable=True)
+    children = db.Column(db.Text, nullable=True)
+    hobbies = db.Column(db.Text, nullable=True)
+    topics = db.Column(db.Text, nullable=True)
+    goal = db.Column(db.Text, nullable=True)
+    source = db.Column(db.String(255), nullable=True)
+    about = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    approved = db.Column(db.Boolean, default=False)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'birth_date': self.birth_date.strftime('%d.%m.%Y') if self.birth_date else None,
+            'telegram': self.telegram,
+            'marital_status': self.marital_status,
+            'children': self.children,
+            'hobbies': self.hobbies,
+            'topics': self.topics,
+            'goal': self.goal,
+            'source': self.source,
+            'about': self.about,
+            'created_at': self.created_at.strftime('%d.%m.%Y %H:%M'),
+            'approved': self.approved
+        }
+
+# ==================== ROUTES ====================
+
 @app.route('/')
+@app.route('/setup/add-members')
 def index():
+    """Главная страница с участницами и формой анкеты"""
     return render_template('index.html')
 
-# === АДМИНКА ===
-@app.route('/admin')
-def admin_page():
-    return render_template('admin_dashboard.html')
-
-@app.route('/admin/login')
-def admin_login():
-    return render_template('admin_login.html')
-
-# === API ===
-@app.route('/members.json')
-def get_members_json():
-    try:
-        with open('public/members.json', 'r', encoding='utf-8') as f:
-            return jsonify(json.load(f))
-    except:
-        return jsonify({})
-
 @app.route('/api/members', methods=['GET'])
-def api_members():
-    try:
-        with open('public/members.json', 'r', encoding='utf-8') as f:
-            members = json.load(f)
-        return jsonify(list(members.values()))
-    except:
-        return jsonify([])
+def get_members():
+    """Получить список одобренных участниц"""
+    members = Member.query.all()
+    return jsonify({
+        'status': 'success',
+        'members': [m.to_dict() for m in members]
+    })
 
 @app.route('/api/survey', methods=['POST'])
-def save_survey():
+def add_survey():
+    """Добавить новую анкету"""
     try:
         data = request.get_json()
         
-        if not data or not data.get('name'):
-            return jsonify({'error': 'Имя обязательно'}), 400
-
-        survey = {
-            'id': datetime.now().isoformat(),
-            'name': data.get('name', ''),
-            'birthDate': data.get('birthDate', ''),
-            'telegramUsername': data.get('telegramUsername', ''),
-            'familyStatus': data.get('familyStatus', ''),
-            'children': data.get('children', ''),
-            'interests': data.get('interests', ''),
-            'topics': data.get('topics', ''),
-            'goals': data.get('goals', ''),
-            'source': data.get('source', ''),
-            'useTelegram': data.get('useTelegram', 'no'),
-            'createdAt': datetime.now().isoformat(),
-            'status': 'pending'
-        }
-
-        surveys = load_surveys()
-        surveys.append(survey)
-        save_surveys(surveys)
-
-        print(f'✅ Анкета сохранена: {survey["name"]}')
-        return jsonify({'success': True}), 200
-
+        # Преобразуем дату
+        birth_date = None
+        if data.get('birth_date'):
+            try:
+                birth_date = datetime.strptime(data['birth_date'], '%Y-%m-%d').date()
+            except:
+                birth_date = None
+        
+        survey = Survey(
+            name=data.get('name', '').strip(),
+            birth_date=birth_date,
+            telegram=data.get('telegram', '').strip().replace('@', ''),
+            marital_status=data.get('marital_status', ''),
+            children=data.get('children', ''),
+            hobbies=data.get('hobbies', ''),
+            topics=data.get('topics', ''),
+            goal=data.get('goal', ''),
+            source=data.get('source', ''),
+            about=data.get('about', '')
+        )
+        
+        db.session.add(survey)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Анкета успешно отправлена!',
+            'survey_id': survey.id
+        }), 201
+    
     except Exception as e:
-        print(f'❌ Ошибка: {str(e)}')
-        return jsonify({'error': str(e)}), 500
+        db.session.rollback()
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 400
 
 @app.route('/api/surveys', methods=['GET'])
 def get_surveys():
-    surveys = load_surveys()
-    return jsonify(surveys)
+    """Получить все анкеты (только для админа)"""
+    if not session.get('admin_logged_in'):
+        return jsonify({'status': 'error', 'error': 'Unauthorized'}), 401
+    
+    surveys = Survey.query.order_by(Survey.created_at.desc()).all()
+    return jsonify({
+        'status': 'success',
+        'surveys': [s.to_dict() for s in surveys]
+    })
 
-@app.route('/api/admin/surveys/pending', methods=['GET'])
-def get_pending_surveys():
-    try:
-        surveys = load_surveys()
-        pending = [s for s in surveys if s.get('status') == 'pending']
-        
-        # Преобразуем в формат для дашборда
-        formatted = []
-        for s in pending:
-            formatted.append({
-                'id': s['id'],
-                'name': s.get('name', ''),
-                'birth_date': s.get('birthDate', ''),
-                'telegram': s.get('telegramUsername', ''),
-                'about': s.get('interests', '')
-            })
-        
-        return jsonify({'surveys': formatted}), 200
-    except Exception as e:
-        print(f'❌ Ошибка: {e}')
-        return jsonify({'surveys': []}), 200
-
-@app.route('/api/admin/stats', methods=['GET'])
-def get_admin_stats():
-    try:
-        surveys = load_surveys()
-        
-        try:
-            with open('public/members.json', 'r', encoding='utf-8') as f:
-                members = json.load(f)
-        except:
-            members = {}
-        
-        total_surveys = len(surveys)
-        pending_surveys = len([s for s in surveys if s.get('status') == 'pending'])
-        approved_surveys = len([s for s in surveys if s.get('status') == 'approved'])
-        total_members = len(members)
-        
-        return jsonify({
-            'stats': {
-                'total_surveys': total_surveys,
-                'pending_surveys': pending_surveys,
-                'approved_surveys': approved_surveys,
-                'total_members': total_members
-            }
-        }), 200
-    except Exception as e:
-        print(f'❌ Ошибка статистики: {e}')
-        return jsonify({
-            'stats': {
-                'total_surveys': 0,
-                'pending_surveys': 0,
-                'approved_surveys': 0,
-                'total_members': 0
-            }
-        }), 200
-
-@app.route('/api/survey/<survey_id>', methods=['PUT'])
-def update_survey(survey_id):
-    try:
-        data = request.get_json()
-        surveys = load_surveys()
-        
-        for survey in surveys:
-            if survey['id'] == survey_id:
-                survey['status'] = data.get('status', 'pending')
-                save_surveys(surveys)
-                return jsonify({'success': True}), 200
-        
-        return jsonify({'error': 'Не найдена'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/surveys/<survey_id>/approve', methods=['POST'])
+@app.route('/api/surveys/<int:survey_id>/approve', methods=['POST'])
 def approve_survey(survey_id):
+    """Одобрить анкету и добавить участницу"""
+    if not session.get('admin_logged_in'):
+        return jsonify({'status': 'error', 'error': 'Unauthorized'}), 401
+    
     try:
-        surveys = load_surveys()
-        survey_data = None
+        survey = Survey.query.get(survey_id)
+        if not survey:
+            return jsonify({'status': 'error', 'error': 'Survey not found'}), 404
         
-        # Найди анкету
-        for survey in surveys:
-            if survey['id'] == survey_id:
-                survey_data = survey
-                survey['status'] = 'approved'
-                break
+        # Создаем новую участницу
+        member = Member(
+            name=survey.name,
+            emoji='✨',  # По умолчанию
+            title='Ведьма',  # По умолчанию
+            birth_date=survey.birth_date,
+            about=survey.about
+        )
         
-        if not survey_data:
-            return jsonify({'error': 'Анкета не найдена'}), 404
+        survey.approved = True
+        db.session.add(member)
+        db.session.commit()
         
-        # Загрузи участников
-        try:
-            with open('public/members.json', 'r', encoding='utf-8') as f:
-                members = json.load(f)
-        except:
-            members = {}
-        
-        # Добавь новую участницу (используй ID анкеты)
-        member_id = survey_id
-        members[member_id] = {
-            'id': member_id,
-            'name': survey_data.get('name', ''),
-            'title': '🆕 Новенькая',
-            'emoji': '✨',
-            'birth_date': survey_data.get('birthDate', ''),
-            'telegram': survey_data.get('telegramUsername', ''),
-            'interests': survey_data.get('interests', ''),
-            'familyStatus': survey_data.get('familyStatus', ''),
-            'children': survey_data.get('children', ''),
-            'topics': survey_data.get('topics', ''),
-            'goals': survey_data.get('goals', ''),
-            'source': survey_data.get('source', '')
-        }
-        
-        # Сохрани обратно
-        with open('public/members.json', 'w', encoding='utf-8') as f:
-            json.dump(members, f, ensure_ascii=False, indent=2)
-        
-        # Сохрани обновленные анкеты
-        save_surveys(surveys)
-        
-        print(f'✅ Участница добавлена: {survey_data["name"]}')
-        return jsonify({'success': True}), 200
-        
+        return jsonify({
+            'status': 'success',
+            'message': f'{survey.name} одобрена и добавлена!'
+        })
+    
     except Exception as e:
-        print(f'❌ Ошибка approve: {e}')
-        return jsonify({'error': str(e)}), 500
+        db.session.rollback()
+        return jsonify({'status': 'error', 'error': str(e)}), 400
 
-@app.route('/api/surveys/<survey_id>/reject', methods=['POST'])
-def reject_survey(survey_id):
-    try:
-        surveys = load_surveys()
-        surveys = [s for s in surveys if s['id'] != survey_id]
-        save_surveys(surveys)
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """Вход админа"""
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        admin_password = os.getenv('ADMIN_PASSWORD', 'admin123')
         
-        print(f'✅ Анкета отклонена: {survey_id}')
-        return jsonify({'success': True}), 200
-    except Exception as e:
-        print(f'❌ Ошибка reject: {e}')
-        return jsonify({'error': str(e)}), 500
+        if password == admin_password:
+            session['admin_logged_in'] = True
+            return redirect('/admin/dashboard')
+        else:
+            return render_template('admin_login.html', error='Неверный пароль'), 401
+    
+    return render_template('admin_login.html')
 
-@app.route('/api/survey/<survey_id>', methods=['DELETE'])
-def delete_survey(survey_id):
-    try:
-        surveys = load_surveys()
-        surveys = [s for s in surveys if s['id'] != survey_id]
-        save_surveys(surveys)
-        return jsonify({'success': True}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    """Админ панель"""
+    if not session.get('admin_logged_in'):
+        return redirect('/admin/login')
+    
+    return render_template('admin_dashboard.html')
 
-@app.route('/api/members/<member_id>/title', methods=['PUT'])
-def update_member_title(member_id):
-    try:
-        data = request.get_json()
-        new_title = data.get('title', '')
-        
-        with open('public/members.json', 'r', encoding='utf-8') as f:
-            members = json.load(f)
-        
-        if member_id in members:
-            members[member_id]['title'] = new_title
-            
-            with open('public/members.json', 'w', encoding='utf-8') as f:
-                json.dump(members, f, ensure_ascii=False, indent=2)
-            
-            print(f'✅ Титул обновлен: {members[member_id]["name"]} -> {new_title}')
-            return jsonify({'success': True}), 200
-        
-        return jsonify({'error': 'Участница не найдена'}), 404
-    except Exception as e:
-        print(f'❌ Ошибка update title: {e}')
-        return jsonify({'error': str(e)}), 500
+@app.route('/admin/logout')
+def admin_logout():
+    """Выход админа"""
+    session.clear()
+    return redirect('/')
 
-@app.route('/api/members/<member_id>', methods=['DELETE'])
-def delete_member(member_id):
+@app.route('/migrate')
+def migrate():
+    """Миграция из JSON"""
     try:
-        with open('public/members.json', 'r', encoding='utf-8') as f:
-            members = json.load(f)
+        # Читаем members.json
+        with open('api/members.json', 'r', encoding='utf-8') as f:
+            members_data = json.load(f)
         
-        if member_id in members:
-            del members[member_id]
+        count = 0
+        for member in members_data:
+            # Преобразуем дату
+            birth_date = None
+            if member.get('birthDate'):
+                try:
+                    birth_date = datetime.strptime(member['birthDate'], '%d.%m.%Y').date()
+                except:
+                    pass
             
-            with open('public/members.json', 'w', encoding='utf-8') as f:
-                json.dump(members, f, ensure_ascii=False, indent=2)
-            
-            print(f'✅ Участница удалена')
-            return jsonify({'success': True}), 200
+            # Проверяем, есть ли уже такая участница
+            existing = Member.query.filter_by(name=member['name']).first()
+            if not existing:
+                m = Member(
+                    name=member['name'],
+                    emoji=member.get('emoji', '✨'),
+                    title=member.get('title', 'Ведьма'),
+                    birth_date=birth_date,
+                    about=member.get('about', '')
+                )
+                db.session.add(m)
+                count += 1
         
-        return jsonify({'error': 'Участница не найдена'}), 404
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Добавлено {count} участниц из JSON'
+        })
+    
     except Exception as e:
-        print(f'❌ Ошибка delete: {e}')
-        return jsonify({'error': str(e)}), 500
+        db.session.rollback()
+        return jsonify({'status': 'error', 'error': str(e)}), 400
+
+# ==================== ERROR HANDLERS ====================
 
 @app.errorhandler(404)
-def not_found(e):
-    return render_template('index.html')
+def not_found(error):
+    return jsonify({'status': 'error', 'error': 'Not found'}), 404
 
 @app.errorhandler(500)
-def server_error(e):
-    return jsonify({'error': 'Server error'}), 500
+def server_error(error):
+    return jsonify({'status': 'error', 'error': 'Server error'}), 500
+
+# ==================== INITIALIZATION ====================
+
+@app.before_request
+def create_tables():
+    """Создать таблицы, если их нет"""
+    db.create_all()
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    with app.app_context():
+        db.create_all()
+        print("✅ Таблицы созданы!")
+    
+    port = int(os.getenv('PORT', 8080))
+    app.run(debug=os.getenv('FLASK_ENV') == 'development', port=port)
