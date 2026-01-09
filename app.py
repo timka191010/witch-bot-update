@@ -201,7 +201,13 @@ def approve_survey(survey_id):
             'title': '🆕 Новенькая',
             'emoji': '✨',
             'birth_date': survey_data.get('birthDate', ''),
-            'telegram': survey_data.get('telegramUsername', '')
+            'telegram': survey_data.get('telegramUsername', ''),
+            'interests': survey_data.get('interests', ''),
+            'familyStatus': survey_data.get('familyStatus', ''),
+            'children': survey_data.get('children', ''),
+            'topics': survey_data.get('topics', ''),
+            'goals': survey_data.get('goals', ''),
+            'source': survey_data.get('source', '')
         }
         
         # Сохрани обратно
