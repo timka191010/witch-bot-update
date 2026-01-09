@@ -247,6 +247,18 @@ def stats_page():
         return jsonify({'error': f'Stats page not found: {str(e)}'}), 404
 
 
+@app.route('/witches')
+def witches_page():
+    """Публичная страница со всеми ведьмами"""
+    try:
+        template_path = get_template_path('witches.html')
+        with open(template_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except Exception as e:
+        print(f"Error loading witches page: {e}")
+        return jsonify({'error': f'Witches page not found: {str(e)}'}), 404
+
+
 # ==================== API - SURVEYS ====================
 
 @app.route('/api/surveys', methods=['POST'])
@@ -372,8 +384,13 @@ def reject_survey(survey_id):
 def get_members():
     try:
         members = Member.query.order_by(Member.created_at.desc()).all()
+        print(f"📊 Всего членов: {len(members)}")
+        for m in members:
+            print(f"  - {m.name}: {m.title}")
+        
         return jsonify({'status': 'success', 'members': [m.to_dict() for m in members]}), 200
     except Exception as e:
+        print(f"❌ Ошибка в get_members: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -512,67 +529,17 @@ def admin_titles():
         return jsonify({'error': str(e)}), 500
 
 
-# ==================== API - DEFAULT MEMBERS ====================
+# ==================== API - INIT DB ====================
 
-@app.route('/api/load-default-members', methods=['POST'])
-def load_default_members():
-    """Загрузить 8 дефолтных участников"""
+@app.route('/api/init-db', methods=['POST', 'GET'])
+def init_db_endpoint():
+    """Инициализировать БД с участницами"""
     try:
-        existing_count = Member.query.count()
-        if existing_count >= 8:
-            return jsonify({'error': 'Участники уже загружены'}), 400
-        
-        default_members = [
-            {'name': 'Мария Зуева', 'title': '🌌 Верховная Ведьма', 'emoji': '🔮'},
-            {'name': 'Юлия Пиндюрина', 'title': '⭐ Ведьма Звёздного Пути', 'emoji': '✨'},
-            {'name': 'Елена Клыкова', 'title': '🌿 Ведьма Трав и Эликсиров', 'emoji': '🌿'},
-            {'name': 'Наталья Гудкова', 'title': '🔥 Ведьма Огненного Круга', 'emoji': '🔥'},
-            {'name': 'Екатерина Когай', 'title': '🌙 Ведьма Лунного Света', 'emoji': '🌙'},
-            {'name': 'Елена Пустовит', 'title': '💎 Ведьма Кристаллов', 'emoji': '💎'},
-            {'name': 'Елена Провосуд', 'title': '⚡ Ведьма Грозовых Ветров', 'emoji': '⚡'},
-            {'name': 'Анна Моисеева', 'title': '🦋 Ведьма Превращений', 'emoji': '🦋'},
-        ]
-        
-        for idx, member_data in enumerate(default_members, 1):
-            survey = Survey(
-                name=member_data['name'],
-                telegram=f'witch_{idx}',
-                approved=True
-            )
-            db.session.add(survey)
-            db.session.flush()
-            
-            member = Member(
-                survey_id=survey.id,
-                name=member_data['name'],
-                title=member_data['title'],
-                emoji=member_data['emoji'],
-                bio=''
-            )
-            db.session.add(member)
-        
-        db.session.commit()
-        
-        members = Member.query.all()
-        return jsonify({
-            'status': 'success',
-            'message': 'Загружено 8 участников',
-            'members': [m.to_dict() for m in members]
-        }), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-
-# ==================== INIT DB WITH DEFAULT DATA ====================
-
-def init_db_with_defaults():
-    """Инициализировать БД с 8 дефолтными участницами"""
-    try:
-        # Всегда чистим и создаём заново
+        # Удаляем старых
         Member.query.delete()
         Survey.query.delete()
         db.session.commit()
+        print("🗑️ Старые данные удалены")
         
         default_members = [
             {'name': 'Мария Зуева', 'title': '🌌 Верховная Ведьма', 'emoji': '🔮'},
@@ -604,10 +571,16 @@ def init_db_with_defaults():
             db.session.add(member)
         
         db.session.commit()
-        print("✅ Добавлено 8 участниц!")
+        print("✅ БД инициализирована с 8 участницами!")
+        
+        return jsonify({
+            'status': 'success',
+            'message': '✅ Инициализировано 8 участниц!'
+        }), 200
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Ошибка при инициализации: {e}")
+        print(f"❌ Ошибка инициализации: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 # ==================== HEALTH CHECK ====================
@@ -622,6 +595,50 @@ def health():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        init_db_with_defaults()
+        print("✅ Таблицы созданы")
+        # Инициализируем БД при старте
+        try:
+            member_count = Member.query.count()
+            if member_count == 0:
+                print("🔄 БД пуста, инициализирую...")
+                Member.query.delete()
+                Survey.query.delete()
+                db.session.commit()
+                
+                default_members = [
+                    {'name': 'Мария Зуева', 'title': '🌌 Верховная Ведьма', 'emoji': '🔮'},
+                    {'name': 'Юлия Пиндюрина', 'title': '⭐ Ведьма Звёздного Пути', 'emoji': '✨'},
+                    {'name': 'Елена Клыкова', 'title': '🌿 Ведьма Трав и Эликсиров', 'emoji': '🌿'},
+                    {'name': 'Наталья Гудкова', 'title': '🔥 Ведьма Огненного Круга', 'emoji': '🔥'},
+                    {'name': 'Екатерина Когай', 'title': '🌙 Ведьма Лунного Света', 'emoji': '🌙'},
+                    {'name': 'Елена Пустовит', 'title': '💎 Ведьма Кристаллов', 'emoji': '💎'},
+                    {'name': 'Елена Провосуд', 'title': '⚡ Ведьма Грозовых Ветров', 'emoji': '⚡'},
+                    {'name': 'Анна Моисеева', 'title': '🦋 Ведьма Превращений', 'emoji': '🦋'},
+                ]
+                
+                for idx, member_data in enumerate(default_members, 1):
+                    survey = Survey(
+                        name=member_data['name'],
+                        telegram=f'witch_{idx}',
+                        approved=True
+                    )
+                    db.session.add(survey)
+                    db.session.flush()
+                    
+                    member = Member(
+                        survey_id=survey.id,
+                        name=member_data['name'],
+                        title=member_data['title'],
+                        emoji=member_data['emoji'],
+                        bio=''
+                    )
+                    db.session.add(member)
+                
+                db.session.commit()
+                print("✅ Добавлено 8 участниц!")
+            else:
+                print(f"✅ БД уже содержит {member_count} членов")
+        except Exception as e:
+            print(f"❌ Ошибка инициализации: {e}")
     
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=False)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
