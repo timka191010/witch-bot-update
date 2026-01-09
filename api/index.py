@@ -39,13 +39,13 @@ class Survey(db.Model):
     goal = db.Column(db.Text)
     source = db.Column(db.String(150))
     agreement = db.Column(db.Boolean, default=False)
-    approved = db.Column(db.Boolean, default=False)  # ← ОДОБРЕНА?
+    approved = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Member(db.Model):
     __tablename__ = 'members'
     id = db.Column(db.Integer, primary_key=True)
-    survey_id = db.Column(db.Integer)  # ← СВЯЗЬ С АНКЕТОЙ
+    survey_id = db.Column(db.Integer)
     name = db.Column(db.String(150), nullable=False)
     title = db.Column(db.String(200))
     emoji = db.Column(db.String(10), default='🧙‍♀️')
@@ -105,7 +105,7 @@ def handle_members():
                 goal=data.get('goal'),
                 source=data.get('source'),
                 agreement=data.get('agreement', False),
-                approved=False  # ← НЕ ОДОБРЕНА!
+                approved=False
             )
             db.session.add(survey)
             db.session.commit()
@@ -118,16 +118,26 @@ def handle_members():
 
 # ===== ADMIN ROUTES =====
 
-@app.route('/admin/login')
+@app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
+    """Admin login page"""
+    if request.method == 'POST':
+        data = request.get_json()
+        if data.get('password') == 'witch2026':
+            return jsonify({'status': 'success'}), 200
+        else:
+            return jsonify({'status': 'error', 'message': 'Неверный пароль'}), 401
+    
     return render_template('admin_login.html')
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
+    """Admin dashboard"""
     return render_template('admin_dashboard.html')
 
 @app.route('/admin/stats')
 def admin_stats():
+    """Admin stats"""
     return render_template('admin_stats.html')
 
 @app.route('/api/surveys', methods=['GET'])
