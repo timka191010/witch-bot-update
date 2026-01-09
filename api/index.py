@@ -1,454 +1,557 @@
-import os
-import requests
-import random
-import sqlite3
-from flask import Flask, jsonify, request, render_template, send_from_directory
-from flask_cors import CORS
-from dotenv import load_dotenv
-import uuid
-from datetime import datetime
-
-load_dotenv()
-
-# Инициализация
-app = Flask(__name__, template_folder='templates', static_folder='templates')
-CORS(app)
-
-# Переменные окружения
-BOT_TOKEN = os.getenv('BOT_TOKEN', '8500508012:AAEMuWXEsZsUfiDiOV50xFw928Tn7VUJRH8')
-ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'witches2026')
-
-# SQLite БД
-DB_PATH = 'witch_club.db'
-
-# Список титулов с эмодзи
-TITLES = [
-    '🌙 Ведьма луны',
-    '⭐ Ведьма звезд',
-    '🌃 Ведьма ночи',
-    '🌲 Ведьма леса',
-    '🌊 Ведьма океана',
-    '🔥 Ведьма огня',
-    '💧 Ведьма воды',
-    '💨 Ведьма ветра',
-    '🪨 Ведьма земли',
-    '🌿 Ведьма травы',
-    '💎 Ведьма камней',
-    '✨ Ведьма света',
-    '🌑 Ведьма тени',
-    '⏳ Ведьма времени',
-    '🔮 Ведьма судьбы',
-    '🪄 Ведьма магии',
-    '💜 Ведьма любви',
-    '💫 Ведьма желаний',
-    '😴 Ведьма снов',
-    '🎯 Ведьма истины',
-    '👑 Ведьма красоты',
-    '📖 Ведьма мудрости',
-    '⚡ Ведьма силы',
-    '♾️ Ведьма вечности',
-    '🌅 Ведьма рассвета',
-    '🌆 Ведьма закатов',
-    '🌈 Ведьма радуги',
-    '🌹 Ведьма розы',
-    '🪷 Ведьма лилии',
-    '🛤️ Ведьма пути'
-]
-
-print(f"✅ BOT_TOKEN: {BOT_TOKEN[:20]}...")
-print(f"✅ DATABASE: {DB_PATH}")
-print(f"✅ Доступно титулов: {len(TITLES)}")
-
-# ==================== DATABASE ====================
-
-def init_db():
-    """Инициализация БД"""
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    
-    # Таблица участниц
-    c.execute('''CREATE TABLE IF NOT EXISTS members (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        title TEXT DEFAULT 'Новая участница',
-        emoji TEXT DEFAULT '✨',
-        bio TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )''')
-    
-    # Таблица анкет
-    c.execute('''CREATE TABLE IF NOT EXISTS surveys (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        birth_date TEXT,
-        telegram TEXT NOT NULL,
-        about TEXT,
-        status TEXT DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )''')
-    
-    conn.commit()
-    conn.close()
-    print("✅ БД инициализирована")
-
-def get_db():
-    """Получить подключение к БД"""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-init_db()
-
-# ==================== ФУНКЦИИ ====================
-
-def get_random_title():
-    """Получить случайный титул"""
-    return random.choice(TITLES)
-
-def send_telegram_message(username, message_text):
-    """Отправить сообщение в ЛС"""
-    try:
-        payload = {
-            'chat_id': username,
-            'text': message_text,
-            'parse_mode': 'HTML',
-            'disable_web_page_preview': True
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Клуб ведьм - Ведьмы не стареют</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        response = requests.post(
-            f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',
-            json=payload,
-            timeout=10
-        )
-        
-        print(f"📊 Telegram: {response.status_code}")
-        print(f"📊 Response: {response.text}")
-        
-        if response.ok:
-            print(f"✅ ЛС отправлено: {username}")
-            return True
-        else:
-            print(f"❌ Ошибка: {response.text}")
-            return False
-    except Exception as e:
-        print(f"❌ Ошибка отправки: {str(e)}")
-        return False
 
-# ==================== ГЛАВНАЯ СТРАНИЦА ====================
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+        header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-@app.route('/dashboard')
-def dashboard():
-    return render_template('dashboard.html')
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(139, 0, 139, 0.6);
+        }
 
-@app.route('/admin/login')
-def admin_login():
-    return render_template('admin_login.html')
+        .admin-btn {
+            padding: 10px 20px;
+            background: rgba(100, 150, 255, 0.3);
+            border: 1px solid rgba(100, 150, 255, 0.5);
+            border-radius: 8px;
+            color: #6496FF;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
 
-@app.route('/admin/dashboard')
-def admin_dashboard():
-    return render_template('admin_dashboard.html')
+        .admin-btn:hover {
+            background: rgba(100, 150, 255, 0.5);
+        }
 
-@app.route('/admin/stats')
-def admin_stats():
-    return render_template('admin_stats.html')
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
 
-# ==================== API АНКЕТЫ ====================
+        .hero {
+            text-align: center;
+            margin-bottom: 60px;
+        }
 
-@app.route('/api/surveys', methods=['POST'])
-def create_survey():
-    """Создать новую анкету"""
-    try:
-        data = request.json
-        survey_id = str(uuid.uuid4())
-        
-        conn = get_db()
-        c = conn.cursor()
-        
-        c.execute('''INSERT INTO surveys (id, name, birth_date, telegram, about, status)
-                     VALUES (?, ?, ?, ?, ?, 'pending')''',
-                  (survey_id, data.get('name'), data.get('birth_date'), 
-                   data.get('telegram'), data.get('about')))
-        
-        conn.commit()
-        conn.close()
-        
-        print(f"✅ Анкета создана: {survey_id}")
-        
-        return jsonify({'status': 'success', 'id': survey_id}), 201
-    except Exception as e:
-        print(f"❌ Ошибка: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(139, 0, 139, 0.6);
+        }
 
-@app.route('/api/surveys/<survey_id>/approve', methods=['POST'])
-def approve_survey(survey_id):
-    """Одобрить анкету"""
-    try:
-        conn = get_db()
-        c = conn.cursor()
-        
-        # Получить анкету
-        c.execute('SELECT * FROM surveys WHERE id = ?', (survey_id,))
-        survey = c.fetchone()
-        
-        if not survey:
-            return jsonify({'error': 'Survey not found'}), 404
-        
-        # Создать участницу
-        member_id = str(uuid.uuid4())
-        random_title = get_random_title()
-        
-        c.execute('''INSERT INTO members (id, name, title, emoji, bio)
-                     VALUES (?, ?, ?, '✨', '')''',
-                  (member_id, survey['name'], random_title))
-        
-        # Обновить статус
-        c.execute('UPDATE surveys SET status = ? WHERE id = ?', ('approved', survey_id))
-        
-        conn.commit()
-        conn.close()
-        
-        # Отправить в ТГ ЛС
-        message = f"""🎉 <b>Поздравляем!</b>
+        .hero p {
+            font-size: 18px;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
 
-Ваша анкета одобрена! 🧙‍♀️✨
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
 
-Ваш титул: <b>{random_title}</b>
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
 
-🔗 <a href="https://t.me/+S32BT0FT6w0xYTBi">Присоединиться к клубу</a>
+        .btn-primary {
+            background: linear-gradient(135deg, rgba(0, 200, 100, 0.4) 0%, rgba(100, 150, 255, 0.4) 100%);
+            color: #00FF88;
+            border: 1px solid rgba(0, 255, 100, 0.4);
+        }
 
-Ждём вас! 💜"""
-        
-        send_telegram_message(survey['telegram'], message)
-        
-        print(f"✅ Анкета одобрена: {survey_id} -> {random_title}")
-        
-        return jsonify({'status': 'success', 'title': random_title}), 200
-    except Exception as e:
-        print(f"❌ Ошибка: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        .btn-primary:hover {
+            background: linear-gradient(135deg, rgba(0, 200, 100, 0.6) 0%, rgba(100, 150, 255, 0.6) 100%);
+            box-shadow: 0 0 20px rgba(0, 255, 100, 0.3);
+        }
 
-@app.route('/api/surveys/<survey_id>/reject', methods=['POST'])
-def reject_survey(survey_id):
-    """Отклонить анкету"""
-    try:
-        conn = get_db()
-        c = conn.cursor()
-        
-        c.execute('UPDATE surveys SET status = ? WHERE id = ?', ('rejected', survey_id))
-        
-        conn.commit()
-        conn.close()
-        
-        print(f"✅ Анкета отклонена: {survey_id}")
-        
-        return jsonify({'status': 'success'}), 200
-    except Exception as e:
-        print(f"❌ Ошибка: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        .btn-secondary {
+            background: rgba(255, 150, 0, 0.3);
+            color: #FFB800;
+            border: 1px solid rgba(255, 150, 0, 0.4);
+        }
 
-# ==================== API УЧАСТНИЦЫ ====================
+        .btn-secondary:hover {
+            background: rgba(255, 150, 0, 0.5);
+        }
 
-@app.route('/api/members', methods=['GET'])
-def get_members():
-    """Получить участниц"""
-    try:
-        conn = get_db()
-        c = conn.cursor()
-        
-        c.execute('SELECT * FROM members ORDER BY created_at DESC')
-        members = [dict(row) for row in c.fetchall()]
-        
-        conn.close()
-        
-        print(f"✅ Загружено: {len(members)}")
-        
-        return jsonify({'members': members}), 200
-    except Exception as e:
-        print(f"❌ Ошибка: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        .section {
+            margin-bottom: 60px;
+        }
 
-@app.route('/api/members/<member_id>', methods=['DELETE'])
-def delete_member(member_id):
-    """Удалить участницу"""
-    try:
-        conn = get_db()
-        c = conn.cursor()
-        
-        c.execute('DELETE FROM members WHERE id = ?', (member_id,))
-        
-        conn.commit()
-        conn.close()
-        
-        print(f"✅ Удалена: {member_id}")
-        
-        return jsonify({'status': 'success'}), 200
-    except Exception as e:
-        print(f"❌ Ошибка: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        .section-title {
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(139, 0, 139, 0.4);
+        }
 
-@app.route('/api/members/<member_id>/title', methods=['PUT'])
-def update_member_title(member_id):
-    """Изменить титул"""
-    try:
-        data = request.json
-        title = data.get('title')
-        
-        if not title:
-            return jsonify({'error': 'Title required'}), 400
-        
-        conn = get_db()
-        c = conn.cursor()
-        
-        c.execute('UPDATE members SET title = ? WHERE id = ?', (title, member_id))
-        
-        conn.commit()
-        conn.close()
-        
-        print(f"✅ Титул обновлен: {member_id}")
-        
-        return jsonify({'status': 'success'}), 200
-    except Exception as e:
-        print(f"❌ Ошибка: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
 
-# ==================== ADMIN API ====================
+        .member-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
 
-@app.route('/api/admin/login', methods=['POST'])
-def admin_login_api():
-    """Вход"""
-    try:
-        data = request.json
-        password = data.get('password')
-        
-        if password == ADMIN_PASSWORD:
-            return jsonify({'status': 'success', 'token': 'admin_token'}), 200
-        else:
-            return jsonify({'error': 'Invalid password'}), 401
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        .member-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(100, 150, 255, 0.5);
+            box-shadow: 0 0 20px rgba(100, 150, 255, 0.2);
+            transform: translateY(-5px);
+        }
 
-@app.route('/api/admin/stats', methods=['GET'])
-def admin_stats_api():
-    """Статистика"""
-    try:
-        conn = get_db()
-        c = conn.cursor()
-        
-        c.execute('SELECT COUNT(*) FROM surveys')
-        total_surveys = c.fetchone()[0]
-        
-        c.execute("SELECT COUNT(*) FROM surveys WHERE status = 'pending'")
-        pending = c.fetchone()[0]
-        
-        c.execute("SELECT COUNT(*) FROM surveys WHERE status = 'approved'")
-        approved = c.fetchone()[0]
-        
-        c.execute('SELECT COUNT(*) FROM members')
-        total_members = c.fetchone()[0]
-        
-        conn.close()
-        
-        return jsonify({
-            'status': 'success',
-            'stats': {
-                'total_surveys': total_surveys,
-                'pending_surveys': pending,
-                'approved_surveys': approved,
-                'total_members': total_members
+        .member-emoji {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .member-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .member-title {
+            color: #FFD700;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .member-bio {
+            color: #aaa;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .form-section {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-title {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .form-subtitle {
+            color: #aaa;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #6496FF;
+            background: rgba(100, 150, 255, 0.1);
+            box-shadow: 0 0 10px rgba(100, 150, 255, 0.3);
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: #888;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .form-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, rgba(0, 200, 100, 0.4) 0%, rgba(100, 150, 255, 0.4) 100%);
+            color: #00FF88;
+            border: 1px solid rgba(0, 255, 100, 0.4);
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(0, 200, 100, 0.6) 0%, rgba(100, 150, 255, 0.6) 100%);
+            box-shadow: 0 0 20px rgba(0, 255, 100, 0.3);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-reset {
+            background: rgba(255, 100, 100, 0.2);
+            color: #FF6B6B;
+            border: 1px solid rgba(255, 100, 100, 0.4);
+        }
+
+        .btn-reset:hover {
+            background: rgba(255, 100, 100, 0.3);
+        }
+
+        .success-message {
+            display: none;
+            background: rgba(0, 200, 100, 0.2);
+            border: 1px solid rgba(0, 255, 100, 0.4);
+            color: #00FF88;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .error-message {
+            display: none;
+            background: rgba(255, 100, 100, 0.2);
+            border: 1px solid rgba(255, 100, 100, 0.4);
+            color: #FF6B6B;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .required {
+            color: #FF6B6B;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .toggle-form-btn {
+            display: block;
+            margin: 30px auto;
+            padding: 12px 30px;
+            background: rgba(100, 150, 255, 0.3);
+            border: 1px solid rgba(100, 150, 255, 0.5);
+            border-radius: 8px;
+            color: #6496FF;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-form-btn:hover {
+            background: rgba(100, 150, 255, 0.5);
+        }
+
+        .form-hidden {
+            display: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">🧙‍♀️ Ведьмы не стареют</div>
+        <a href="/admin/login" class="admin-btn">🔐 Админка</a>
+    </header>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Добро пожаловать в клуб ведьм! 🌙✨</h1>
+            <p>Место, где собираются самые волшебные женщины нашего времени</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" onclick="scrollToForm()">📝 Присоединиться</button>
+                <a href="#members" class="btn btn-secondary">👥 Участницы</a>
+            </div>
+        </div>
+
+        <div class="section" id="members">
+            <h2 class="section-title">👥 Наши участницы</h2>
+            <div class="members-grid" id="membersContainer">
+                <div style="text-align: center; color: #aaa; grid-column: 1 / -1;">
+                    ⏳ Загружаю участниц...
+                </div>
+            </div>
+        </div>
+
+        <button class="toggle-form-btn" id="toggleFormBtn" onclick="toggleForm()">📝 Заполнить анкету</button>
+
+        <div class="section form-hidden" id="formSection">
+            <div class="form-section">
+                <h2 class="form-title">🧙‍♀️ Анкета для вступления</h2>
+                <p class="form-subtitle">Заполните форму, чтобы присоединиться к клубу</p>
+
+                <div class="success-message" id="successMessage">
+                    ✅ Спасибо! Ваша анкета успешно отправлена. Ожидайте одобрения!
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+
+                <form id="surveyForm">
+                    <div class="form-group">
+                        <label>Ваше имя <span class="required">*</span></label>
+                        <input type="text" id="name" placeholder="Введите ваше имя" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Дата рождения <span class="required">*</span></label>
+                        <input type="date" id="birthDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Telegram @ <span class="required">*</span></label>
+                        <input type="text" id="telegram" placeholder="username (без @)" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Семейное положение <span class="required">*</span></label>
+                        <select id="maritalStatus" required>
+                            <option value="">Выберите...</option>
+                            <option value="свободна">Свободна</option>
+                            <option value="замужем">Замужем</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Дети (возраст, пол)</label>
+                        <textarea id="children" placeholder="Например: дочь, 7 лет; сын, 3 года"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Увлечения и хобби <span class="required">*</span></label>
+                        <textarea id="hobbies" placeholder="Расскажите о ваших интересах..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Интересные темы <span class="required">*</span></label>
+                        <textarea id="topics" placeholder="Какие встречи и темы вам интересны?" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Цель вступления <span class="required">*</span></label>
+                        <textarea id="goal" placeholder="Почему вы хотите присоединиться?" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Откуда узнали о клубе? <span class="required">*</span></label>
+                        <input type="text" id="source" placeholder="Имя подруги" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label><input type="checkbox" id="agreement" required> Я согласна получить ссылку на Telegram-чат и присоединиться к сообществу</label>
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="reset" class="btn-reset">🗑️ Очистить</button>
+                        <button type="submit" class="btn-submit" id="submitBtn">📨 Отправить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 Клуб ведьм "Ведьмы не стареют" 🧙‍♀️✨</p>
+    </footer>
+
+    <script>
+        async function loadMembers() {
+            try {
+                const response = await fetch('/api/members');
+                const data = await response.json();
+                
+                console.log('📊 API Response:', data);
+                
+                const members = Array.isArray(data) ? data : data.members || [];
+                
+                const container = document.getElementById('membersContainer');
+                
+                if (members.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; color: #aaa; grid-column: 1 / -1;">Участниц пока нет</div>';
+                    return;
+                }
+                
+                console.log(`✅ Загружено ${members.length} участниц`);
+                
+                container.innerHTML = members.map(member => `
+                    <div class="member-card">
+                        <div class="member-emoji">${member.emoji}</div>
+                        <div class="member-name">${member.name}</div>
+                        <div class="member-title">${member.title}</div>
+                        ${member.bio ? `<div class="member-bio">${member.bio}</div>` : ''}
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('❌ Ошибка загрузки участниц:', error);
+                document.getElementById('membersContainer').innerHTML = '<div style="text-align: center; color: #FF6B6B; grid-column: 1 / -1;">Ошибка загрузки 😢</div>';
             }
-        }), 200
-    except Exception as e:
-        print(f"❌ Ошибка: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        }
 
-@app.route('/api/admin/surveys/pending', methods=['GET'])
-def get_pending_surveys():
-    """Заявки"""
-    try:
-        conn = get_db()
-        c = conn.cursor()
-        
-        c.execute("SELECT * FROM surveys WHERE status = 'pending' ORDER BY created_at DESC")
-        surveys = [dict(row) for row in c.fetchall()]
-        
-        conn.close()
-        
-        print(f"✅ Заявок: {len(surveys)}")
-        
-        return jsonify({'surveys': surveys}), 200
-    except Exception as e:
-        print(f"❌ Ошибка: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        function toggleForm() {
+            const formSection = document.getElementById('formSection');
+            const toggleBtn = document.getElementById('toggleFormBtn');
+            
+            formSection.classList.toggle('form-hidden');
+            
+            if (!formSection.classList.contains('form-hidden')) {
+                toggleBtn.textContent = '📝 Закрыть анкету';
+                formSection.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                toggleBtn.textContent = '📝 Заполнить анкету';
+            }
+        }
 
-# ==================== SETUP ====================
+        function scrollToForm() {
+            const formSection = document.getElementById('formSection');
+            formSection.classList.remove('form-hidden');
+            document.getElementById('toggleFormBtn').textContent = '📝 Закрыть анкету';
+            formSection.scrollIntoView({ behavior: 'smooth' });
+        }
 
-@app.route('/setup/add-members', methods=['GET', 'POST'])
-def setup_add_members():
-    """Добавить участниц"""
-    try:
-        conn = get_db()
-        c = conn.cursor()
-        
-        members = [
-            ('Мария Зуева', '🔮 Верховная Ведьма', '🔮'),
-            ('Юлия Пиндюрина', '✨ Ведьма Звёздного Пути', '✨'),
-            ('Елена Клыкова', '🌿 Ведьма Трав и Эликсиров', '🌿'),
-            ('Наталья Гудкова', '🔥 Ведьма Огненного Круга', '🔥'),
-            ('Екатерина Когай', '🌕 Ведьма Лунного Света', '🌕'),
-            ('Елена Пустовит', '💎 Ведьма Кристаллов', '💎'),
-            ('Елена Правосуд', '⚡ Ведьма Грозовых Ветров', '⚡'),
-            ('Анна Моисеева', '🦋 Ведьма Превращений', '🦋'),
-        ]
-        
-        for name, title, emoji in members:
-            member_id = str(uuid.uuid4())
-            c.execute('''INSERT INTO members (id, name, title, emoji, bio, created_at)
-                         VALUES (?, ?, ?, ?, '', ?)''',
-                      (member_id, name, title, emoji, datetime.now().isoformat()))
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({'status': 'success', 'message': '✅ 8 участниц добавлено!'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        document.getElementById('surveyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-# ==================== ТЕСТ ====================
+            const submitBtn = document.getElementById('submitBtn');
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
 
-@app.route('/api/send-telegram-test/<username>', methods=['GET'])
-def send_telegram_test(username):
-    """Тестовая отправка в ЛС"""
-    try:
-        random_title = get_random_title()
-        
-        message = f"""🎉 <b>Поздравляем!</b>
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
 
-Ваша анкета одобрена! 🧙‍♀️✨
+            const data = {
+                name: document.getElementById('name').value.trim(),
+                birthDate: document.getElementById('birthDate').value,
+                telegramUsername: document.getElementById('telegram').value.trim().replace('@', ''),
+                interests: document.getElementById('hobbies').value.trim(),
+                topics: document.getElementById('topics').value.trim(),
+                goals: document.getElementById('goal').value.trim(),
+                source: document.getElementById('source').value.trim()
+            };
 
-Ваш титул: <b>{random_title}</b>
+            if (!data.name || !data.birthDate || !data.telegramUsername) {
+                errorMsg.textContent = '❌ Заполните все обязательные поля!';
+                errorMsg.style.display = 'block';
+                return;
+            }
 
-🔗 <a href="https://t.me/+S32BT0FT6w0xYTBi">Присоединиться к клубу</a>
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Отправляю...';
 
-Ждём вас! 💜"""
-        
-        success = send_telegram_message(username, message)
-        
-        if success:
-            return jsonify({'status': 'success', 'title': random_title}), 200
-        else:
-            return jsonify({'status': 'error', 'message': 'Failed to send'}), 500
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            try {
+                const response = await fetch('/api/survey', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
 
-@app.route('/api/health', methods=['GET'])
-def health():
-    return jsonify({'status': 'ok'}), 200
+                if (response.ok) {
+                    successMsg.style.display = 'block';
+                    document.getElementById('surveyForm').reset();
+                    setTimeout(() => {
+                        toggleForm();
+                    }, 3000);
+                } else {
+                    const result = await response.json();
+                    errorMsg.textContent = '❌ Ошибка: ' + (result.error || 'Попробуйте снова');
+                    errorMsg.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('❌ Fetch error:', error);
+                errorMsg.textContent = '❌ Ошибка отправки: ' + error.message;
+                errorMsg.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📨 Отправить';
+            }
+        });
 
-# ==================== ЗАПУСК ====================
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8080)
+        loadMembers();
+    </script>
+</body>
+</html>
