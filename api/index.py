@@ -150,7 +150,7 @@ def send_telegram_message(username, message_text):
         return False
 
 
-# ==================== API ====================
+# ==================== API - SURVEYS ====================
 
 @app.route('/api/surveys', methods=['POST'])
 def create_survey():
@@ -268,11 +268,25 @@ def reject_survey(survey_id):
         return jsonify({'error': str(e)}), 500
 
 
+# ==================== API - MEMBERS ====================
+
 @app.route('/api/members', methods=['GET'])
 def get_members():
     try:
         members = Member.query.order_by(Member.created_at.desc()).all()
         return jsonify({'status': 'success', 'members': [m.to_dict() for m in members]}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/members/<int:member_id>', methods=['GET'])
+def get_member(member_id):
+    try:
+        member = Member.query.get(member_id)
+        if not member:
+            return jsonify({'error': 'Участница не найдена'}), 404
+        
+        return jsonify({'status': 'success', 'member': member.to_dict()}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -292,6 +306,8 @@ def update_member(member_id):
             member.bio = data['bio']
         if 'emoji' in data:
             member.emoji = data['emoji']
+        if 'name' in data:
+            member.name = data['name']
         
         db.session.commit()
         
@@ -301,11 +317,36 @@ def update_member(member_id):
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/stats', methods=['GET'])
-def get_stats():
+@app.route('/api/members/<int:member_id>', methods=['DELETE'])
+def delete_member(member_id):
+    try:
+        member = Member.query.get(member_id)
+        if not member:
+            return jsonify({'error': 'Участница не найдена'}), 404
+        
+        survey_id = member.survey_id
+        db.session.delete(member)
+        
+        survey = Survey.query.get(survey_id)
+        if survey:
+            db.session.delete(survey)
+        
+        db.session.commit()
+        
+        return jsonify({'status': 'success'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# ==================== API - ADMIN ====================
+
+@app.route('/api/admin/stats', methods=['GET'])
+def admin_stats():
     try:
         total_surveys = Survey.query.count()
         approved = Survey.query.filter_by(approved=True).count()
+        pending = total_surveys - approved
         members = Member.query.count()
         
         return jsonify({
@@ -313,18 +354,72 @@ def get_stats():
             'stats': {
                 'total_surveys': total_surveys,
                 'approved_surveys': approved,
-                'pending': total_surveys - approved,
-                'members': members
+                'pending_surveys': pending,
+                'total_members': members
             }
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/admin/surveys/pending', methods=['GET'])
+def admin_pending_surveys():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        
+        surveys = Survey.query.filter_by(approved=False).order_by(
+            Survey.created_at.desc()
+        ).paginate(page=page, per_page=per_page)
+        
+        return jsonify({
+            'status': 'success',
+            'surveys': [s.to_dict() for s in surveys.items],
+            'total': surveys.total,
+            'pages': surveys.pages,
+            'current_page': page
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/members', methods=['GET'])
+def admin_all_members():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 50, type=int)
+        
+        members = Member.query.order_by(
+            Member.created_at.desc()
+        ).paginate(page=page, per_page=per_page)
+        
+        return jsonify({
+            'status': 'success',
+            'members': [m.to_dict() for m in members.items],
+            'total': members.total,
+            'pages': members.pages,
+            'current_page': page
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/titles', methods=['GET'])
+def admin_titles():
+    try:
+        return jsonify({'status': 'success', 'titles': TITLES}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ==================== HEALTH CHECK ====================
+
 @app.route('/api/health', methods=['GET'])
 def health():
     return jsonify({'status': 'ok'}), 200
 
+
+# ==================== INIT ====================
 
 if __name__ == '__main__':
     with app.app_context():
