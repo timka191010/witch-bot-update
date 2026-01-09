@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template_string
+from flask import Flask, jsonify, request, render_template_string, redirect
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
@@ -197,6 +197,12 @@ def admin_login():
     except Exception as e:
         print(f"Error loading login: {e}")
         return jsonify({'error': f'Login page not found: {str(e)}'}), 404
+
+
+@app.route('/admin/login')
+def admin_login_redirect():
+    """Редирект для совместимости"""
+    return redirect('/admin')
 
 
 @app.route('/dashboard')
