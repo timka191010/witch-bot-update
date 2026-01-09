@@ -64,51 +64,6 @@ def get_members():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/submit-survey', methods=['POST'])
-def submit_survey():
-    """Submit survey form"""
-    try:
-        data = request.json
-        
-        # Validate required fields
-        required_fields = ['name', 'telegram', 'birthDate', 'maritalStatus', 'hobbies', 'topics', 'goal', 'source', 'agreement']
-        for field in required_fields:
-            if field not in data or not data[field]:
-                return jsonify({
-                    'status': 'error',
-                    'message': f'Missing field: {field}'
-                }), 400
-        
-        # Create survey record
-        survey = Survey(
-            name=data.get('name', '').strip(),
-            birth_date=data.get('birthDate', '').strip(),
-            telegram=data.get('telegram', '').strip().replace('@', ''),
-            marital_status=data.get('maritalStatus', '').strip(),
-            children=data.get('children', '').strip(),
-            hobbies=data.get('hobbies', '').strip(),
-            topics=data.get('topics', '').strip(),
-            goal=data.get('goal', '').strip(),
-            source=data.get('source', '').strip(),
-            agreement=data.get('agreement', False)
-        )
-        
-        db.session.add(survey)
-        db.session.commit()
-        
-        return jsonify({
-            'status': 'success',
-            'message': 'Анкета успешно отправлена! Ожидайте одобрения.',
-            'survey_id': survey.id
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'status': 'error',
-            'message': f'Error: {str(e)}'
-        }), 500
-
 # Error handlers
 @app.errorhandler(404)
 def not_found(error):
