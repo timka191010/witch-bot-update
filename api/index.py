@@ -11,10 +11,7 @@ app = Flask(__name__)
 
 # ==================== CONFIG ====================
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-    'DATABASE_URL',
-    'postgresql://user:password@localhost/witch_club'
-)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///witch_club.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_AS_ASCII'] = False
 
@@ -33,7 +30,7 @@ class Survey(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
-    telegram = db.Column(db.String(255), nullable=False)
+    telegram = db.Column(db.String(255), nullable=False, unique=True)
     birth_date = db.Column(db.String(50), nullable=True)
     about = db.Column(db.Text, nullable=True)
     approved = db.Column(db.Boolean, default=False)
@@ -76,21 +73,55 @@ class Member(db.Model):
         }
 
 
-# ==================== DATA ====================
-
 TITLES = [
-    '✨ Ведьма солнца',
-    '🔮 Ведьма предсказаний',
-    '🌙 Ведьма луны',
-    '⚡ Повелительница молний',
-    '🌿 Ведьма природы',
-    '💜 Хранительница магии',
-    '🕷️ Плетущая сети',
-    '🧿 Ведьма силы',
+    '⭐ ведьма звёзд',
+    '🌙 ведьма луны',
+    '☀️ ведьма солнца',
+    '🔥 ведьма огня',
+    '💧 ведьма воды',
+    '🌪️ ведьма ветра',
+    '🪨 ведьма земли',
+    '🌲 ведьма лесов',
+    '⛰️ ведьма гор',
+    '🌊 ведьма морей',
+    '💭 ведьма грёз',
+    '🧵 ведьма судеб',
+    '⏳ ведьма времени',
+    '🌑 ведьма теней',
+    '💡 ведьма света',
+    '🕷️ ведьма тьмы',
+    '🧪 ведьма зелья',
+    '📿 ведьма заклятий',
+    '✨ ведьма чар',
+    '🎭 ведьма иллюзий',
+    '🪞 ведьма реальности',
+    '😴 ведьма снов',
+    '👹 ведьма кошмаров',
+    '💕 ведьма любви',
+    '🔪 ведьма ненависти',
+    '😄 ведьма радости',
+    '😢 ведьма печали',
+    '😠 ведьма гнева',
+    '🧘 ведьма спокойствия',
+    '⚔️ ведьма войны',
+    '☮️ ведьма мира',
+    '💀 ведьма смерти',
+    '🌱 ведьма жизни',
+    '🎂 ведьма рождения',
+    '🔄 ведьма возрождения',
+    '🌪️ ведьма гибели',
+    '🛡️ ведьма спасения',
+    '🚫 ведьма проклятий',
+    '✋ ведьма благословений',
+    '🎲 ведьма кармы',
+    '🦋 ведьма превращений',
+    '🪶 ведьма полёта',
+    '👁️ ведьма невидимости',
+    '🏥 ведьма исцеления',
+    '☠️ ведьма яда',
+    '🌀 ведьма зарубежных миров',
 ]
 
-
-# ==================== TELEGRAM HELPER ====================
 
 def send_telegram_message(username, message_text):
     """Отправить сообщение через бот"""
@@ -109,14 +140,13 @@ def send_telegram_message(username, message_text):
         )
         
         if response.ok:
-            print(f"✅ Telegram: сообщение отправлено {username}")
+            print(f"✅ Telegram: {username}")
             return True
         else:
-            print(f"❌ Telegram error: {response.text}")
+            print(f"❌ Telegram: {response.text}")
             return False
-            
     except Exception as e:
-        print(f"❌ Ошибка Telegram: {str(e)}")
+        print(f"❌ Ошибка: {str(e)}")
         return False
 
 
@@ -124,7 +154,6 @@ def send_telegram_message(username, message_text):
 
 @app.route('/api/surveys', methods=['POST'])
 def create_survey():
-    """Создать анкету"""
     try:
         data = request.get_json()
         
@@ -145,11 +174,7 @@ def create_survey():
         db.session.add(survey)
         db.session.commit()
         
-        return jsonify({
-            'status': 'success',
-            'survey': survey.to_dict()
-        }), 201
-        
+        return jsonify({'status': 'success', 'survey': survey.to_dict()}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -157,7 +182,6 @@ def create_survey():
 
 @app.route('/api/surveys', methods=['GET'])
 def get_surveys():
-    """Получить неодобренные анкеты"""
     try:
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
@@ -173,41 +197,33 @@ def get_surveys():
             'pages': surveys.pages,
             'current_page': page
         }), 200
-        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/surveys/<int:survey_id>', methods=['GET'])
 def get_survey(survey_id):
-    """Получить одну анкету"""
     try:
         survey = Survey.query.get(survey_id)
         if not survey:
             return jsonify({'error': 'Анкета не найдена'}), 404
         
-        return jsonify({
-            'status': 'success',
-            'survey': survey.to_dict()
-        }), 200
-        
+        return jsonify({'status': 'success', 'survey': survey.to_dict()}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/surveys/<int:survey_id>/approve', methods=['POST'])
 def approve_survey(survey_id):
-    """✅ ОДОБРИТЬ АНКЕТУ И ОТПРАВИТЬ СООБЩЕНИЕ"""
+    """✅ ОДОБРИТЬ И ОТПРАВИТЬ СООБЩЕНИЕ"""
     try:
         survey = Survey.query.get(survey_id)
         if not survey:
             return jsonify({'error': 'Анкета не найдена'}), 404
         
-        # Отмечаем как одобренную
         survey.approved = True
         db.session.commit()
         
-        # Добавляем в членов
         member = Member(
             survey_id=survey.id,
             name=survey.name,
@@ -218,22 +234,19 @@ def approve_survey(survey_id):
         db.session.add(member)
         db.session.commit()
         
-        # 📱 ОТПРАВЛЯЕМ СООБЩЕНИЕ В TELEGRAM
+        # 📱 ОТПРАВЛЯЕМ В TELEGRAM
         username = survey.telegram.replace('@', '').strip()
         message = f"""🎉 <b>Поздравляем, {survey.name}!</b>
 
 Ваша анкета одобрена! 🧙‍♀️✨
 
-<b>Присоединиться к закрытому клубу:</b>
-
-🔗 <a href="{CHAT_LINK}">Вход в клуб</a>
+🔗 <a href="{CHAT_LINK}">Присоединиться к клубу</a>
 
 Ждём вас! 💜"""
         
         send_telegram_message(username, message)
         
-        return jsonify({'status': 'success', 'message': 'Участница добавлена'}), 200
-    
+        return jsonify({'status': 'success', 'message': 'Участница добавлена', 'member': member.to_dict()}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -241,7 +254,6 @@ def approve_survey(survey_id):
 
 @app.route('/api/surveys/<int:survey_id>/reject', methods=['POST'])
 def reject_survey(survey_id):
-    """Отклонить анкету"""
     try:
         survey = Survey.query.get(survey_id)
         if not survey:
@@ -250,8 +262,7 @@ def reject_survey(survey_id):
         db.session.delete(survey)
         db.session.commit()
         
-        return jsonify({'status': 'success', 'message': 'Анкета отклонена'}), 200
-        
+        return jsonify({'status': 'success'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -259,66 +270,64 @@ def reject_survey(survey_id):
 
 @app.route('/api/members', methods=['GET'])
 def get_members():
-    """Получить всех членов"""
     try:
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 20, type=int)
-        
-        members = Member.query.order_by(
-            Member.created_at.desc()
-        ).paginate(page=page, per_page=per_page)
-        
-        return jsonify({
-            'status': 'success',
-            'members': [m.to_dict() for m in members.items],
-            'total': members.total,
-            'pages': members.pages,
-            'current_page': page
-        }), 200
-        
+        members = Member.query.order_by(Member.created_at.desc()).all()
+        return jsonify({'status': 'success', 'members': [m.to_dict() for m in members]}), 200
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/members/<int:member_id>/update', methods=['POST'])
+def update_member(member_id):
+    try:
+        member = Member.query.get(member_id)
+        if not member:
+            return jsonify({'error': 'Участница не найдена'}), 404
+        
+        data = request.get_json()
+        
+        if 'title' in data:
+            member.title = data['title']
+        if 'bio' in data:
+            member.bio = data['bio']
+        if 'emoji' in data:
+            member.emoji = data['emoji']
+        
+        db.session.commit()
+        
+        return jsonify({'status': 'success', 'member': member.to_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
-    """Статистика"""
     try:
-        total_surveys = db.session.query(func.count(Survey.id)).scalar()
-        approved_surveys = db.session.query(func.count(Survey.id)).filter(
-            Survey.approved == True
-        ).scalar()
-        total_members = db.session.query(func.count(Member.id)).scalar()
+        total_surveys = Survey.query.count()
+        approved = Survey.query.filter_by(approved=True).count()
+        members = Member.query.count()
         
         return jsonify({
             'status': 'success',
             'stats': {
                 'total_surveys': total_surveys,
-                'approved_surveys': approved_surveys,
-                'pending_surveys': total_surveys - approved_surveys,
-                'total_members': total_members
+                'approved_surveys': approved,
+                'pending': total_surveys - approved,
+                'members': members
             }
         }), 200
-        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/health', methods=['GET'])
-def health_check():
-    """Health check"""
+def health():
     return jsonify({'status': 'ok'}), 200
 
-
-# ==================== INIT ====================
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     
-    app.run(
-        host='0.0.0.0',
-        port=int(os.environ.get('PORT', 5000)),
-        debug=os.environ.get('FLASK_ENV') == 'development'
-    )
-
+    app.run(host='0.0.0.0', port=5000, debug=True)
