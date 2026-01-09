@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Админпанель</title>
+    <title>Админ-панель - Клуб ведьм</title>
     <style>
         * {
             margin: 0;
@@ -16,63 +16,58 @@
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: #fff;
             min-height: 100vh;
+        }
+
+        .top-bar {
+            background: rgba(0, 0, 0, 0.3);
             padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        h1 {
-            font-size: 28px;
-            text-shadow: 0 0 20px rgba(139, 0, 139, 0.6);
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
         }
 
-        .nav-buttons {
+        .top-buttons {
             display: flex;
             gap: 10px;
         }
 
-        .btn-nav {
+        .btn {
             padding: 10px 20px;
             background: rgba(100, 150, 255, 0.3);
             border: 1px solid rgba(100, 150, 255, 0.5);
             border-radius: 8px;
             color: #6496FF;
-            cursor: pointer;
             text-decoration: none;
             font-weight: 500;
+            cursor: pointer;
             transition: all 0.3s ease;
+            font-size: 14px;
         }
 
-        .btn-nav:hover {
+        .btn:hover {
             background: rgba(100, 150, 255, 0.5);
         }
 
-        .logout-btn {
-            padding: 10px 20px;
-            background: rgba(255, 100, 100, 0.2);
-            border: 1px solid rgba(255, 100, 100, 0.5);
-            border-radius: 8px;
+        .btn-danger {
+            background: rgba(255, 100, 100, 0.3);
+            border-color: rgba(255, 100, 100, 0.5);
             color: #FF6B6B;
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
         }
 
-        .logout-btn:hover {
-            background: rgba(255, 100, 100, 0.3);
+        .btn-danger:hover {
+            background: rgba(255, 100, 100, 0.5);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
         }
 
         .stats {
@@ -85,16 +80,16 @@
         .stat-card {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
             padding: 20px;
-            border-radius: 15px;
             text-align: center;
         }
 
-        .stat-number {
+        .stat-value {
             font-size: 32px;
             font-weight: bold;
-            color: #FFD700;
-            margin: 10px 0;
+            color: #00FF88;
+            margin-bottom: 10px;
         }
 
         .stat-label {
@@ -103,493 +98,329 @@
         }
 
         .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(100, 150, 255, 0.3);
+        }
+
+        .survey-card {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-
-        .section h2 {
-            font-size: 20px;
-            margin-bottom: 20px;
-            color: #fff;
-        }
-
-        .survey-item, .member-item {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .survey-info {
-            flex: 1;
-        }
-
-        .survey-name {
-            font-weight: 500;
-        }
-
-        .approve-btn, .reject-btn, .remove-btn, .load-btn, .edit-btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .approve-btn {
-            background: rgba(0, 200, 100, 0.3);
-            color: #00FF88;
-            border: 1px solid rgba(0, 255, 100, 0.4);
-        }
-
-        .approve-btn:hover {
-            background: rgba(0, 200, 100, 0.5);
-        }
-
-        .reject-btn, .remove-btn {
-            background: rgba(255, 100, 100, 0.3);
-            color: #FF6B6B;
-            border: 1px solid rgba(255, 100, 100, 0.4);
-        }
-
-        .reject-btn:hover, .remove-btn:hover {
-            background: rgba(255, 100, 100, 0.5);
-        }
-
-        .load-btn {
-            background: rgba(100, 150, 255, 0.3);
-            color: #6496FF;
-            border: 1px solid rgba(100, 150, 255, 0.5);
-            padding: 10px 20px;
-            font-size: 14px;
-        }
-
-        .load-btn:hover {
-            background: rgba(100, 150, 255, 0.5);
-        }
-
-        .load-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .edit-btn {
-            background: rgba(100, 150, 255, 0.3);
-            color: #6496FF;
-            border: 1px solid rgba(100, 150, 255, 0.4);
-        }
-
-        .edit-btn:hover {
-            background: rgba(100, 150, 255, 0.5);
-        }
-
-        .empty {
-            text-align: center;
-            color: #aaa;
-            padding: 30px;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .controls {
-            margin-bottom: 20px;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .modal.active {
-            display: block;
-        }
-
-        .modal-content {
-            background-color: #16213e;
-            margin: 5% auto;
-            padding: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            width: 90%;
-            max-width: 400px;
-            color: #fff;
-        }
-
-        .modal-header {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        .modal-close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            cursor: pointer;
-        }
-
-        .modal-close:hover {
-            color: #fff;
-        }
-
-        .form-group {
+            border-radius: 12px;
+            padding: 20px;
             margin-bottom: 15px;
         }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
+        .survey-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
 
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
+        .survey-info {
+            font-size: 13px;
+            color: #aaa;
+            margin-bottom: 10px;
+            line-height: 1.6;
+            word-break: break-word;
         }
 
-        .form-group input:focus {
-            outline: none;
-            border-color: #6496FF;
-        }
-
-        .form-group input:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .modal-buttons {
+        .survey-actions {
             display: flex;
             gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
+            margin-top: 15px;
         }
 
-        .btn-save {
-            background: rgba(0, 200, 100, 0.3);
+        .survey-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-approve {
+            background: rgba(0, 200, 100, 0.4);
             color: #00FF88;
             border: 1px solid rgba(0, 255, 100, 0.4);
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
         }
 
-        .btn-save:hover {
-            background: rgba(0, 200, 100, 0.5);
+        .btn-approve:hover {
+            background: rgba(0, 200, 100, 0.6);
         }
 
-        .btn-cancel {
-            background: rgba(255, 100, 100, 0.3);
+        .btn-reject {
+            background: rgba(255, 100, 100, 0.4);
             color: #FF6B6B;
             border: 1px solid rgba(255, 100, 100, 0.4);
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
         }
 
-        .btn-cancel:hover {
-            background: rgba(255, 100, 100, 0.5);
+        .btn-reject:hover {
+            background: rgba(255, 100, 100, 0.6);
+        }
+
+        .member-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-emoji {
+            font-size: 32px;
+            margin-right: 15px;
+        }
+
+        .member-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .member-title {
+            font-size: 13px;
+            color: #FFD700;
+        }
+
+        .member-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #aaa;
+            padding: 40px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #aaa;
+            padding: 40px;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🧙‍♀️ Админпанель</h1>
-            <div class="nav-buttons">
-                <a href="/admin/stats" class="btn-nav">📊 Статистика</a>
-                <button class="logout-btn" onclick="logout()">Выход</button>
-            </div>
-        </header>
-
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-label">Всего анкет</div>
-                <div class="stat-number" id="totalSurveys">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">На проверке</div>
-                <div class="stat-number" id="pendingSurveys">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Одобрено</div>
-                <div class="stat-number" id="approvedSurveys">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Участниц</div>
-                <div class="stat-number" id="totalMembers">0</div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>📋 Анкеты на проверке</h2>
-            <div class="controls">
-                <button id="load-btn" class="load-btn" onclick="loadDefaultMembers()">📥 Загрузить 8 ведьм</button>
-            </div>
-            <div id="pendingList">
-                <div class="empty">⏳ Загружаю...</div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>👥 Участницы клуба</h2>
-            <div id="membersList">
-                <div class="empty">⏳ Загружаю...</div>
-            </div>
+    <div class="top-bar">
+        <div class="logo">🧙‍♀️ Админ-панель</div>
+        <div class="top-buttons">
+            <a href="/" class="btn">На сайт</a>
+            <button class="btn btn-danger" onclick="logout()">Выйти</button>
         </div>
     </div>
 
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeEditModal()">&times;</span>
-            <div class="modal-header">✏️ Редактировать титул</div>
-            
-            <div class="form-group">
-                <label>Имя:</label>
-                <input type="text" id="memberName" placeholder="Имя" readonly>
+    <div class="container">
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalSurveys">0</div>
+                <div class="stat-label">Всего анкет</div>
             </div>
-
-            <div class="form-group">
-                <label>Эмодзи:</label>
-                <input type="text" id="memberEmoji" placeholder="🔮" maxlength="2">
+            <div class="stat-card">
+                <div class="stat-value" id="pendingSurveys">0</div>
+                <div class="stat-label">В ожидании</div>
             </div>
-
-            <div class="form-group">
-                <label>Титул:</label>
-                <input type="text" id="memberTitle" placeholder="Титул ведьмы">
+            <div class="stat-card">
+                <div class="stat-value" id="approvedSurveys">0</div>
+                <div class="stat-label">Одобрено</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalMembers">0</div>
+                <div class="stat-label">Участниц</div>
+            </div>
+        </div>
 
-            <div class="modal-buttons">
-                <button class="btn-cancel" onclick="closeEditModal()">Отмена</button>
-                <button class="btn-save" onclick="saveMember()">Сохранить</button>
+        <div class="section">
+            <h2 class="section-title">📝 Заявки на вступление</h2>
+            <div id="surveysContainer" class="loading">
+                ⏳ Загружаю заявки...
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">👥 Участницы клуба</h2>
+            <div id="membersContainer" class="loading">
+                ⏳ Загружаю участниц...
             </div>
         </div>
     </div>
 
     <script>
-        let currentMemberId = null;
-
-        // Проверка авторизации
-        if (!localStorage.getItem('admin_logged_in')) {
-            window.location.href = '/admin/login';
-        }
-
-        function logout() {
-            localStorage.removeItem('admin_logged_in');
-            window.location.href = '/admin/login';
-        }
-
-        function openEditModal(id, name, emoji, title) {
-            currentMemberId = id;
-            document.getElementById('memberName').value = name;
-            document.getElementById('memberEmoji').value = emoji;
-            document.getElementById('memberTitle').value = title;
-            document.getElementById('editModal').classList.add('active');
-        }
-
-        function closeEditModal() {
-            document.getElementById('editModal').classList.remove('active');
-            currentMemberId = null;
-        }
-
-        async function saveMember() {
-            if (!currentMemberId) return;
-
-            const data = {
-                emoji: document.getElementById('memberEmoji').value,
-                title: document.getElementById('memberTitle').value
-            };
-
+        async function loadStats() {
             try {
-                const res = await fetch(`/api/members/${currentMemberId}/update`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await res.json();
+                const response = await fetch('/api/admin/stats');
+                if (!response.ok) throw new Error('Stats failed');
                 
-                if (result.status === 'success') {
-                    alert('✅ Участница обновлена!');
-                    closeEditModal();
-                    loadData();
-                } else {
-                    alert('❌ Ошибка: ' + result.message);
-                }
+                const data = await response.json();
+                
+                document.getElementById('totalSurveys').textContent = data.stats.total_surveys;
+                document.getElementById('pendingSurveys').textContent = data.stats.pending_surveys;
+                document.getElementById('approvedSurveys').textContent = data.stats.approved_surveys;
+                document.getElementById('totalMembers').textContent = data.stats.total_members;
             } catch (error) {
-                alert('❌ Ошибка: ' + error.message);
+                console.error('Ошибка загрузки статистики:', error);
             }
         }
 
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('editModal');
-            if (event.target === modal) {
-                closeEditModal();
-            }
-        });
-
-        async function loadData() {
+        async function loadSurveys() {
             try {
-                // Загружаем все анкеты
-                const surveysRes = await fetch('/api/surveys');
-                const surveys = await surveysRes.json();
-
-                // Загружаем одобренных участниц
-                const membersRes = await fetch('/api/members');
-                const members = await membersRes.json();
-
-                // Разделяем анкеты на ожидающие и одобренные
-                const pending = surveys.filter(s => !s.approved);
-                const approved = surveys.filter(s => s.approved);
-
-                // Обновляем статистику
-                document.getElementById('totalSurveys').textContent = surveys.length;
-                document.getElementById('pendingSurveys').textContent = pending.length;
-                document.getElementById('approvedSurveys').textContent = approved.length;
-                document.getElementById('totalMembers').textContent = members.length;
-
-                // Показываем ожидающие анкеты
-                const pendingList = document.getElementById('pendingList');
-                if (pending.length === 0) {
-                    pendingList.innerHTML = '<div class="empty">✅ Все анкеты проверены!</div>';
-                } else {
-                    pendingList.innerHTML = pending.map(s => `
-                        <div class="survey-item">
-                            <div class="survey-info">
-                                <div class="survey-name">👤 ${s.name}</div>
-                                <small style="color: #aaa;">📱 @${s.telegram}</small>
-                            </div>
-                            <div class="action-buttons">
-                                <button class="approve-btn" onclick="approveSurvey(${s.id})">✅ Одобрить</button>
-                                <button class="reject-btn" onclick="rejectSurvey(${s.id})">❌ Отклонить</button>
-                            </div>
-                        </div>
-                    `).join('');
+                const response = await fetch('/api/admin/surveys/pending');
+                if (!response.ok) throw new Error('Surveys failed');
+                
+                const data = await response.json();
+                const container = document.getElementById('surveysContainer');
+                
+                if (!data.surveys || data.surveys.length === 0) {
+                    container.innerHTML = '<div class="empty-state">✅ Нет новых заявок!</div>';
+                    return;
                 }
-
-                // Показываем участниц
-                const membersList = document.getElementById('membersList');
-                if (members.length === 0) {
-                    membersList.innerHTML = '<div class="empty">Участниц пока нет</div>';
-                } else {
-                    membersList.innerHTML = members.map(m => `
-                        <div class="member-item">
-                            <div class="survey-info">
-                                <div class="survey-name">${m.emoji} ${m.name}</div>
-                                <small style="color: #FFD700;">${m.title}</small>
-                            </div>
-                            <div class="action-buttons">
-                                <button class="edit-btn" onclick="openEditModal(${m.id}, '${m.name.replace(/'/g, "\\'")}', '${m.emoji}', '${m.title.replace(/'/g, "\\'")}')">✏️ Изменить</button>
-                                <button class="remove-btn" onclick="removeMember(${m.id})">🗑️ Удалить</button>
-                            </div>
+                
+                container.innerHTML = data.surveys.map(survey => `
+                    <div class="survey-card">
+                        <div class="survey-name">📋 ${survey.name}</div>
+                        <div class="survey-info">
+                            ${survey.birth_date ? `📅 <strong>Дата рождения:</strong> ${survey.birth_date}<br>` : ''}
+                            ${survey.telegram ? `📱 <strong>Telegram:</strong> @${survey.telegram}<br>` : ''}
+                            ${survey.about ? `📝 <strong>О себе:</strong><br>${survey.about.replace(/\n/g, '<br>')}<br>` : ''}
                         </div>
-                    `).join('');
-                }
-
+                        <div class="survey-actions">
+                            <button class="btn-approve" onclick="approveSurvey(${survey.id})">✅ Одобрить</button>
+                            <button class="btn-reject" onclick="rejectSurvey(${survey.id})">❌ Отклонить</button>
+                        </div>
+                    </div>
+                `).join('');
             } catch (error) {
-                console.error('Ошибка:', error);
-                document.getElementById('pendingList').innerHTML = '<div class="empty">❌ Ошибка загрузки данных</div>';
+                console.error('Ошибка загрузки заявок:', error);
+                document.getElementById('surveysContainer').innerHTML = '<div class="empty-state">✅ Нет новых заявок!</div>';
+            }
+        }
+
+        async function loadMembers() {
+            try {
+                const response = await fetch('/api/members');
+                if (!response.ok) throw new Error('Members failed');
+                
+                const data = await response.json();
+                const members = data.members || [];
+                const container = document.getElementById('membersContainer');
+                
+                if (!members || members.length === 0) {
+                    container.innerHTML = '<div class="empty-state">Пока нет участниц</div>';
+                    return;
+                }
+                
+                container.innerHTML = members.map(member => `
+                    <div class="member-card">
+                        <div style="display: flex; align-items: center; flex: 1;">
+                            <span class="member-emoji">${member.emoji}</span>
+                            <div class="member-info">
+                                <div class="member-name">${member.name}</div>
+                                <div class="member-title">${member.title}</div>
+                            </div>
+                        </div>
+                        <div class="member-actions">
+                            <button class="btn btn-danger" onclick="deleteMember(${member.id})">🗑️ Удалить</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Ошибка загрузки участниц:', error);
+                document.getElementById('membersContainer').innerHTML = '<div class="empty-state">Пока нет участниц</div>';
             }
         }
 
         async function approveSurvey(surveyId) {
             try {
-                const res = await fetch(`/api/surveys/${surveyId}/approve`, { method: 'POST' });
-                const data = await res.json();
-                if (data.status === 'success') {
+                const response = await fetch(`/api/surveys/${surveyId}/approve`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
                     alert('✅ Участница добавлена!');
-                    loadData();
+                    loadStats();
+                    loadSurveys();
+                    loadMembers();
                 } else {
-                    alert('❌ Ошибка: ' + data.message);
+                    alert('❌ Ошибка');
                 }
             } catch (error) {
+                console.error('Ошибка:', error);
                 alert('❌ Ошибка: ' + error.message);
             }
         }
 
         async function rejectSurvey(surveyId) {
             if (!confirm('Вы уверены?')) return;
-            try {
-                const res = await fetch(`/api/surveys/${surveyId}/reject`, { method: 'POST' });
-                const data = await res.json();
-                if (data.status === 'success') {
-                    alert('✅ Анкета удалена');
-                    loadData();
-                } else {
-                    alert('❌ Ошибка: ' + data.message);
-                }
-            } catch (error) {
-                alert('❌ Ошибка: ' + error.message);
-            }
-        }
-
-        async function removeMember(memberId) {
-            if (!confirm('Удалить участницу?')) return;
-            try {
-                const res = await fetch(`/api/members/${memberId}/delete`, { method: 'POST' });
-                const data = await res.json();
-                if (data.status === 'success') {
-                    alert('✅ Участница удалена');
-                    loadData();
-                } else {
-                    alert('❌ Ошибка: ' + data.message);
-                }
-            } catch (error) {
-                alert('❌ Ошибка: ' + error.message);
-            }
-        }
-
-        async function loadDefaultMembers() {
-            if (!confirm('Загрузить 8 основных ведьм?')) return;
-            
-            const btn = document.getElementById('load-btn');
-            btn.disabled = true;
-            btn.textContent = '⏳ Загружаю...';
             
             try {
-                const res = await fetch('/api/load-default-members', { method: 'POST' });
-                const data = await res.json();
+                const response = await fetch(`/api/surveys/${surveyId}/reject`, {
+                    method: 'POST'
+                });
                 
-                if (data.status === 'success') {
-                    alert(`✅ Загружено ${data.count} ведьм!`);
-                    loadData();
+                if (response.ok) {
+                    alert('✅ Заявка удалена');
+                    loadStats();
+                    loadSurveys();
                 } else {
-                    alert('❌ Ошибка: ' + data.message);
+                    alert('❌ Ошибка');
                 }
             } catch (error) {
+                console.error('Ошибка:', error);
                 alert('❌ Ошибка: ' + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '📥 Загрузить 8 ведьм';
             }
         }
 
-        // Загрузить данные при открытии
-        loadData();
-        // Обновлять каждые 5 секунд
-        setInterval(loadData, 5000);
+        async function deleteMember(memberId) {
+            if (!confirm('Вы уверены?')) return;
+            
+            try {
+                const response = await fetch(`/api/members/${memberId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('✅ Участница удалена');
+                    loadStats();
+                    loadMembers();
+                } else {
+                    alert('❌ Ошибка');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('❌ Ошибка: ' + error.message);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('adminAuth');
+            window.location.href = '/admin/login';
+        }
+
+        loadStats();
+        loadSurveys();
+        loadMembers();
+
+        setInterval(() => {
+            loadStats();
+            loadSurveys();
+            loadMembers();
+        }, 5000);
     </script>
 </body>
 </html>
