@@ -1,185 +1,203 @@
-import random
-from flask import Flask, render_template, request, jsonify, redirect
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 from datetime import datetime
+import os
+import random
+import requests
+from sqlalchemy import func
 
-app = Flask(__name__, template_folder='templates', static_folder='static')
-app.secret_key = 'witch-secret-2026'
+app = Flask(__name__)
 
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///witch_club.db'
+# ==================== CONFIG ====================
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    'DATABASE_URL',
+    'postgresql://user:password@localhost/witch_club'
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JSON_AS_ASCII'] = False
+
 db = SQLAlchemy(app)
+CORS(app)
 
-# Рандомные титулы для новых участниц
-TITLES = [
-    'Ведьма знаний 📚',
-    'Королева магии ✨',
-    'Хранительница секретов 🔮',
-    'Мастер зелий 🧪',
-    'Древняя мудрость 👑',
-    'Волшебница луны 🌙',
-    'Дива чар 💫',
-    'Повелительница стихий 🔥',
-    'Звёздная ведьма ⭐',
-    'Королевна тьмы 🖤'
-]
+# ==================== TELEGRAM ====================
 
-# 8 основных ведьм
-DEFAULT_MEMBERS = [
-    {'name': 'Мария Зуева', 'title': '👑 Верховная Ведьма', 'emoji': '🔮', 'bio': ''},
-    {'name': 'Елена Клыкова', 'title': '🌿 Ведьма Трав и Эликсиров', 'emoji': '🌿', 'bio': ''},
-    {'name': 'Елена Пустовит', 'title': '💎 Ведьма Кристаллов', 'emoji': '💎', 'bio': ''},
-    {'name': 'Елена Провосуд', 'title': '⚡ Ведьма Грозовых Ветров', 'emoji': '⚡', 'bio': ''},
-    {'name': 'Юлия Пиндюрина', 'title': '⭐ Ведьма Звёздного Пути', 'emoji': '⭐', 'bio': ''},
-    {'name': 'Наталья Гудкова', 'title': '🔥 Ведьма Огненного Круга', 'emoji': '🔥', 'bio': ''},
-    {'name': 'Екатерина Когай', 'title': '🌙 Ведьма Лунного Света', 'emoji': '🌙', 'bio': ''},
-    {'name': 'Анна Моисеева', 'title': '✨ Ведьма Магии', 'emoji': '✨', 'bio': ''},
-]
+BOT_TOKEN = '8500508012:AAEMuWXEsZsUfiDiOV50xFw928Tn7VUJRH8'
+CHAT_LINK = 'https://t.me/+S32BT0FT6w0xYTBi'
 
-# ===== DATABASE MODELS =====
+# ==================== MODELS ====================
+
 class Survey(db.Model):
     __tablename__ = 'surveys'
+    
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(150), nullable=False)
-    birth_date = db.Column(db.String(20))
-    telegram = db.Column(db.String(150), nullable=False)
-    marital_status = db.Column(db.String(50))
-    children = db.Column(db.Text)
-    hobbies = db.Column(db.Text)
-    topics = db.Column(db.Text)
-    goal = db.Column(db.Text)
-    source = db.Column(db.String(150))
-    agreement = db.Column(db.Boolean, default=False)
+    name = db.Column(db.String(255), nullable=False)
+    telegram = db.Column(db.String(255), nullable=False)
+    birth_date = db.Column(db.String(50), nullable=True)
+    about = db.Column(db.Text, nullable=True)
     approved = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'telegram': self.telegram,
+            'birth_date': self.birth_date,
+            'about': self.about,
+            'approved': self.approved,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
 
 class Member(db.Model):
     __tablename__ = 'members'
+    
     id = db.Column(db.Integer, primary_key=True)
-    survey_id = db.Column(db.Integer)
-    name = db.Column(db.String(150), nullable=False)
-    title = db.Column(db.String(200))
+    survey_id = db.Column(db.Integer, db.ForeignKey('surveys.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    title = db.Column(db.String(255), nullable=True)
     emoji = db.Column(db.String(10), default='🧙‍♀️')
-    bio = db.Column(db.Text)
+    bio = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-# Create database tables
-with app.app_context():
-    db.create_all()
-
-# ===== ROUTES =====
-
-@app.route('/')
-def index():
-    """Main page"""
-    return render_template('index.html')
-
-@app.route('/api/members', methods=['GET', 'POST', 'OPTIONS'])
-def handle_members():
-    """Get all members or add new member"""
     
-    # CORS preflight
-    if request.method == 'OPTIONS':
-        return '', 200
-    
-    # GET - Получить ТОЛЬКО ОДОБРЕННЫХ участниц
-    if request.method == 'GET':
-        try:
-            members = Member.query.all()
-            members_data = []
-            for m in members:
-                members_data.append({
-                    'id': m.id,
-                    'name': m.name,
-                    'title': m.title,
-                    'emoji': m.emoji,
-                    'bio': m.bio
-                })
-            return jsonify(members_data), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    
-    # POST - Добавить анкету (НЕ добавляем в членов сразу!)
-    if request.method == 'POST':
-        try:
-            data = request.get_json()
-            
-            # Сохраняем анкету БЕЗ одобрения
-            survey = Survey(
-                name=data.get('name'),
-                birth_date=data.get('birthDate'),
-                telegram=data.get('telegram'),
-                marital_status=data.get('maritalStatus'),
-                children=data.get('children'),
-                hobbies=data.get('hobbies'),
-                topics=data.get('topics'),
-                goal=data.get('goal'),
-                source=data.get('source'),
-                agreement=data.get('agreement', False),
-                approved=False
-            )
-            db.session.add(survey)
-            db.session.commit()
-            
-            return jsonify({'status': 'success', 'message': 'Анкета отправлена. Ожидайте одобрения'}), 200
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'survey_id': self.survey_id,
+            'name': self.name,
+            'title': self.title,
+            'emoji': self.emoji,
+            'bio': self.bio,
+            'created_at': self.created_at.isoformat()
+        }
+
+
+# ==================== DATA ====================
+
+TITLES = [
+    '✨ Ведьма года',
+    '🔮 Видящая судьбу',
+    '🌙 Дочь луны',
+    '⚡ Повелительница молний',
+    '🌿 Травница',
+    '💜 Хранительница магии',
+    '🕷️ Плетущая сети',
+    '🧿 Защитница',
+]
+
+
+# ==================== TELEGRAM HELPER ====================
+
+def send_telegram_message(username, message_text):
+    """Отправить сообщение через бот"""
+    try:
+        payload = {
+            'chat_id': username,
+            'text': message_text,
+            'parse_mode': 'HTML',
+            'disable_web_page_preview': True
+        }
         
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'status': 'error', 'message': str(e)}), 400
-
-# ===== ADMIN ROUTES =====
-
-@app.route('/admin/login', methods=['GET', 'POST'])
-def admin_login():
-    """Admin login page"""
-    if request.method == 'POST':
-        data = request.get_json()
-        if data.get('password') == 'witch2026':
-            return jsonify({'status': 'success'}), 200
+        response = requests.post(
+            f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',
+            json=payload,
+            timeout=10
+        )
+        
+        if response.ok:
+            print(f"✅ Telegram: сообщение отправлено {username}")
+            return True
         else:
-            return jsonify({'status': 'error', 'message': 'Неверный пароль'}), 401
-    
-    return render_template('admin_login.html')
+            print(f"❌ Telegram error: {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Ошибка Telegram: {str(e)}")
+        return False
 
-@app.route('/admin/logout')
-def admin_logout():
-    """Admin logout"""
-    return redirect('/admin/login')
 
-@app.route('/admin/dashboard')
-def admin_dashboard():
-    """Admin dashboard"""
-    return render_template('admin_dashboard.html')
+# ==================== API ====================
 
-@app.route('/admin/stats')
-def admin_stats():
-    """Admin stats"""
-    return render_template('admin_stats.html')
+@app.route('/api/surveys', methods=['POST'])
+def create_survey():
+    """Создать анкету"""
+    try:
+        data = request.get_json()
+        
+        if not data.get('name') or not data.get('telegram'):
+            return jsonify({'error': 'Заполните имя и Telegram'}), 400
+        
+        existing = Survey.query.filter_by(telegram=data['telegram'].replace('@', '')).first()
+        if existing:
+            return jsonify({'error': 'Анкета с этим Telegram уже существует'}), 400
+        
+        survey = Survey(
+            name=data['name'],
+            telegram=data['telegram'].replace('@', ''),
+            birth_date=data.get('birth_date', ''),
+            about=data.get('about', '')
+        )
+        
+        db.session.add(survey)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'survey': survey.to_dict()
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/surveys', methods=['GET'])
 def get_surveys():
-    """Получить ВСЕ анкеты (для админа)"""
+    """Получить неодобренные анкеты"""
     try:
-        surveys = Survey.query.all()
-        surveys_data = []
-        for s in surveys:
-            surveys_data.append({
-                'id': s.id,
-                'name': s.name,
-                'telegram': s.telegram,
-                'birth_date': s.birth_date,
-                'marital_status': s.marital_status,
-                'approved': s.approved,
-                'created_at': s.created_at.isoformat() if s.created_at else None
-            })
-        return jsonify(surveys_data), 200
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        surveys = Survey.query.filter_by(approved=False).order_by(
+            Survey.created_at.desc()
+        ).paginate(page=page, per_page=per_page)
+        
+        return jsonify({
+            'status': 'success',
+            'surveys': [s.to_dict() for s in surveys.items],
+            'total': surveys.total,
+            'pages': surveys.pages,
+            'current_page': page
+        }), 200
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/api/surveys/<int:survey_id>', methods=['GET'])
+def get_survey(survey_id):
+    """Получить одну анкету"""
+    try:
+        survey = Survey.query.get(survey_id)
+        if not survey:
+            return jsonify({'error': 'Анкета не найдена'}), 404
+        
+        return jsonify({
+            'status': 'success',
+            'survey': survey.to_dict()
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/surveys/<int:survey_id>/approve', methods=['POST'])
 def approve_survey(survey_id):
-    """Одобрить анкету и добавить в участницы"""
+    """✅ ОДОБРИТЬ АНКЕТУ И ОТПРАВИТЬ СООБЩЕНИЕ"""
     try:
         survey = Survey.query.get(survey_id)
         if not survey:
@@ -200,10 +218,26 @@ def approve_survey(survey_id):
         db.session.add(member)
         db.session.commit()
         
+        # 📱 ОТПРАВЛЯЕМ СООБЩЕНИЕ В TELEGRAM
+        username = survey.telegram.replace('@', '').strip()
+        message = f"""🎉 <b>Поздравляем, {survey.name}!</b>
+
+Ваша анкета одобрена! 🧙‍♀️✨
+
+<b>Присоединиться к закрытому клубу:</b>
+
+🔗 <a href="{CHAT_LINK}">Вход в клуб</a>
+
+Ждём вас! 💜"""
+        
+        send_telegram_message(username, message)
+        
         return jsonify({'status': 'success', 'message': 'Участница добавлена'}), 200
+    
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/surveys/<int:survey_id>/reject', methods=['POST'])
 def reject_survey(survey_id):
@@ -216,58 +250,75 @@ def reject_survey(survey_id):
         db.session.delete(survey)
         db.session.commit()
         
-        return jsonify({'status': 'success', 'message': 'Анкета удалена'}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/members/<int:member_id>/delete', methods=['POST'])
-def delete_member(member_id):
-    """Удалить участницу"""
-    try:
-        member = Member.query.get(member_id)
-        if not member:
-            return jsonify({'error': 'Участница не найдена'}), 404
-        db.session.delete(member)
-        db.session.commit()
-        return jsonify({'status': 'success'}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/load-default-members', methods=['POST'])
-def load_default_members():
-    """Загрузить 8 основных ведьм"""
-    try:
-        count = 0
-        for member_data in DEFAULT_MEMBERS:
-            # Проверяем, не существует ли уже
-            existing = Member.query.filter_by(name=member_data['name']).first()
-            if not existing:
-                member = Member(
-                    name=member_data['name'],
-                    title=member_data['title'],
-                    emoji=member_data['emoji'],
-                    bio=member_data['bio']
-                )
-                db.session.add(member)
-                count += 1
+        return jsonify({'status': 'success', 'message': 'Анкета отклонена'}), 200
         
-        db.session.commit()
-        return jsonify({'status': 'success', 'count': count}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
-# ===== ERROR HANDLERS =====
 
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({'error': 'Not Found'}), 404
+@app.route('/api/members', methods=['GET'])
+def get_members():
+    """Получить всех членов"""
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        
+        members = Member.query.order_by(
+            Member.created_at.desc()
+        ).paginate(page=page, per_page=per_page)
+        
+        return jsonify({
+            'status': 'success',
+            'members': [m.to_dict() for m in members.items],
+            'total': members.total,
+            'pages': members.pages,
+            'current_page': page
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-@app.errorhandler(500)
-def server_error(error):
-    return jsonify({'error': 'Server Error'}), 500
+
+@app.route('/api/stats', methods=['GET'])
+def get_stats():
+    """Статистика"""
+    try:
+        total_surveys = db.session.query(func.count(Survey.id)).scalar()
+        approved_surveys = db.session.query(func.count(Survey.id)).filter(
+            Survey.approved == True
+        ).scalar()
+        total_members = db.session.query(func.count(Member.id)).scalar()
+        
+        return jsonify({
+            'status': 'success',
+            'stats': {
+                'total_surveys': total_surveys,
+                'approved_surveys': approved_surveys,
+                'pending_surveys': total_surveys - approved_surveys,
+                'total_members': total_members
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check"""
+    return jsonify({'status': 'ok'}), 200
+
+
+# ==================== INIT ====================
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=8080)
+    with app.app_context():
+        db.create_all()
+    
+    app.run(
+        host='0.0.0.0',
+        port=int(os.environ.get('PORT', 5000)),
+        debug=os.environ.get('FLASK_ENV') == 'development'
+    )
+
