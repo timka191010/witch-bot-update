@@ -535,8 +535,9 @@
                     document.getElementById('surveyForm').reset();
                     
                     setTimeout(() => {
-                        window.location.href = '/';
-                    }, 2000);
+                        loadMembers();
+                        toggleForm();
+                    }, 1000);
                 } else {
                     errorMsg.textContent = '❌ Ошибка: ' + (result.error || 'Попробуйте снова');
                     errorMsg.style.display = 'block';
