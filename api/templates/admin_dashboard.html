@@ -590,8 +590,8 @@
                             ${survey.about ? `📝 <strong>О себе:</strong><br>${survey.about.replace(/\n/g, '<br>')}<br>` : ''}
                         </div>
                         <div class="survey-actions">
-                            <button class="btn-approve" onclick="approveSurvey('${survey.id}', '${survey.telegram}')">✅ Одобрить</button>
-                            <button class="btn-reject" onclick="rejectSurvey('${survey.id}')">❌ Отклонить</button>
+                            <button class="btn-approve" onclick="approveSurvey(${survey.id}, '${survey.telegram}')">✅ Одобрить</button>
+                            <button class="btn-reject" onclick="rejectSurvey(${survey.id})">❌ Отклонить</button>
                         </div>
                     </div>
                 `).join('');
@@ -626,8 +626,8 @@
                             </div>
                         </div>
                         <div class="member-actions">
-                            <button class="btn btn-edit" onclick="editMemberTitle('${member.id}', '${member.name}', '${member.title}')">✏️ Титул</button>
-                            <button class="btn btn-danger" onclick="deleteMember('${member.id}')">🗑️ Удалить</button>
+                            <button class="btn btn-edit" onclick="editMemberTitle(${member.id}, '${member.name}', '${member.title}')">✏️ Титул</button>
+                            <button class="btn btn-danger" onclick="deleteMember(${member.id})">🗑️ Удалить</button>
                         </div>
                     </div>
                 `).join('');
@@ -673,12 +673,12 @@
 
         async function approveSurvey(surveyId, telegram) {
             try {
-                const response = await fetch(`/api/surveys/${surveyId}/approve`, {
+                const response = await fetch(`/api/admin/surveys/${surveyId}/approve`, {
                     method: 'POST'
                 });
                 
                 if (response.ok) {
-                    alert('✅ Участница добавлена и сообщение отправлено!');
+                    alert('✅ Участница добавлена!');
                     loadStats();
                     loadSurveys();
                     loadMembers();
@@ -696,7 +696,7 @@
             if (!confirm('Вы уверены?')) return;
             
             try {
-                const response = await fetch(`/api/surveys/${surveyId}/reject`, {
+                const response = await fetch(`/api/admin/surveys/${surveyId}/reject`, {
                     method: 'POST'
                 });
                 
@@ -736,7 +736,6 @@
         }
 
         function logout() {
-            localStorage.removeItem('adminAuth');
             window.location.href = '/admin/login';
         }
 
