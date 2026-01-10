@@ -175,6 +175,40 @@ def approve_survey(survey_id):
         db.session.rollback()
         return jsonify({'status': 'error', 'error': str(e)}), 400
 
+@app.route('/api/admin/surveys/<int:survey_id>/reject', methods=['POST'])
+def reject_survey(survey_id):
+    if not session.get('admin_logged_in'):
+        return jsonify({'status': 'error'}), 401
+    
+    survey = Survey.query.get(survey_id)
+    if not survey:
+        return jsonify({'status': 'error', 'message': 'Survey not found'}), 404
+    
+    try:
+        db.session.delete(survey)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Survey rejected'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'error': str(e)}), 400
+
+@app.route('/api/members/<int:member_id>', methods=['DELETE'])
+def delete_member(member_id):
+    if not session.get('admin_logged_in'):
+        return jsonify({'status': 'error'}), 401
+    
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'status': 'error', 'message': 'Member not found'}), 404
+    
+    try:
+        db.session.delete(member)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Member deleted'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'error': str(e)}), 400
+
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
