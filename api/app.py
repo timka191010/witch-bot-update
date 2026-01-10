@@ -158,7 +158,6 @@ def approve_survey(survey_id):
         return jsonify({'status': 'error', 'message': 'Survey not found'}), 404
     
     try:
-        # Создаем Member из Survey
         member = Member(
             name=survey.name,
             emoji='✨',
@@ -207,6 +206,31 @@ def delete_member(member_id):
         return jsonify({'status': 'success', 'message': 'Member deleted'})
     except Exception as e:
         db.session.rollback()
+        return jsonify({'status': 'error', 'error': str(e)}), 400
+
+@app.route('/api/members/<int:member_id>/title', methods=['PUT'])
+def update_member_title(member_id):
+    if not session.get('admin_logged_in'):
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
+    
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'status': 'error', 'message': 'Member not found'}), 404
+    
+    try:
+        data = request.get_json()
+        new_title = data.get('title', '').strip()
+        
+        if not new_title:
+            return jsonify({'status': 'error', 'message': 'Title cannot be empty'}), 400
+        
+        member.title = new_title
+        db.session.commit()
+        
+        return jsonify({'status': 'success', 'message': 'Title updated'})
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating title: {e}")
         return jsonify({'status': 'error', 'error': str(e)}), 400
 
 @app.route('/admin/login', methods=['GET', 'POST'])
