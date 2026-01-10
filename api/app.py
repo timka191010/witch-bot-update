@@ -108,6 +108,73 @@ def get_surveys():
     surveys = Survey.query.all()
     return jsonify({'status': 'success', 'surveys': [s.to_dict() for s in surveys]})
 
+@app.route('/api/admin/surveys/pending', methods=['GET'])
+def get_pending_surveys():
+    if not session.get('admin_logged_in'):
+        return jsonify({'status': 'error'}), 401
+    surveys = Survey.query.filter_by(approved=False).all()
+    return jsonify({
+        'status': 'success', 
+        'surveys': [
+            {
+                'id': s.id,
+                'name': s.name,
+                'telegram': s.telegram,
+                'birth_date': s.birth_date.strftime('%d.%m.%Y') if s.birth_date else None,
+                'approved': s.approved,
+                'created_at': s.created_at.strftime('%d.%m.%Y %H:%M') if s.created_at else None,
+                'about': s.about
+            } 
+            for s in surveys
+        ]
+    })
+
+@app.route('/api/admin/stats', methods=['GET'])
+def get_admin_stats():
+    if not session.get('admin_logged_in'):
+        return jsonify({'status': 'error'}), 401
+    total_surveys = Survey.query.count()
+    approved_surveys = Survey.query.filter_by(approved=True).count()
+    pending_surveys = Survey.query.filter_by(approved=False).count()
+    total_members = Member.query.count()
+    
+    return jsonify({
+        'status': 'success',
+        'stats': {
+            'total_surveys': total_surveys,
+            'approved_surveys': approved_surveys,
+            'pending_surveys': pending_surveys,
+            'total_members': total_members
+        }
+    })
+
+@app.route('/api/admin/surveys/<int:survey_id>/approve', methods=['POST'])
+def approve_survey(survey_id):
+    if not session.get('admin_logged_in'):
+        return jsonify({'status': 'error'}), 401
+    
+    survey = Survey.query.get(survey_id)
+    if not survey:
+        return jsonify({'status': 'error', 'message': 'Survey not found'}), 404
+    
+    try:
+        # Создаем Member из Survey
+        member = Member(
+            name=survey.name,
+            emoji='✨',
+            title='Участница',
+            birth_date=survey.birth_date,
+            about=survey.about
+        )
+        survey.approved = True
+        
+        db.session.add(member)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Survey approved'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'error': str(e)}), 400
+
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
