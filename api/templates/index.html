@@ -154,6 +154,13 @@
         .member-name {
             font-size: 20px;
             font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .member-title {
+            color: #FFD700;
+            font-size: 14px;
+            margin-bottom: 10px;
         }
 
         .form-section {
@@ -439,6 +446,7 @@
                     <div class="member-card">
                         <div class="member-emoji">${member.emoji}</div>
                         <div class="member-name">${member.name}</div>
+                        <div class="member-title">${member.title}</div>
                     </div>
                 `).join('');
             } catch (error) {
